@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import '../state/session_controller.dart';
-import '../theme/app_theme.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key, required this.session});
@@ -45,7 +44,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Icon(Icons.school, size: 56, color: kAccent),
+                      Image.asset('assets/images/logo_pesantren.png',
+                          height: 96,
+                          semanticLabel: 'Logo Pesantren Persis 50 Lembang'),
                       const SizedBox(height: 16),
                       Text('Asatidz PPI 50',
                           textAlign: TextAlign.center,
