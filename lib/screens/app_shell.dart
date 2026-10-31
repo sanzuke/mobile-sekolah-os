@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 
 import '../services/teacher_service.dart';
 import '../state/session_controller.dart';
+import 'classes_screen.dart';
 import 'home_screen.dart';
 import 'inbox_screen.dart';
 import 'schedule_screen.dart';
 
 /// Bottom-nav shell from the design: Beranda, Jadwal, Kotak masuk, Akun.
-/// Beranda, Jadwal, Kotak masuk (Pengumuman, Agenda, Notifikasi) and Akun are live.
+/// Beranda, Jadwal, Nilai (kelas + input nilai), Kotak masuk (Pengumuman,
+/// Agenda, Notifikasi) and Akun are live.
 /// IndexedStack keeps each tab's loaded data when switching.
 class AppShell extends StatefulWidget {
   const AppShell({super.key, required this.session, required this.service});
@@ -46,6 +48,10 @@ class _AppShellState extends State<AppShell> {
         service: widget.service,
         onUnauthorized: widget.session.logout,
       ),
+      ClassesScreen(
+        service: widget.service,
+        onUnauthorized: widget.session.logout,
+      ),
       InboxScreen(
         service: widget.service,
         unread: _unread,
@@ -63,6 +69,8 @@ class _AppShellState extends State<AppShell> {
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Beranda'),
           NavigationDestination(
               icon: Icon(Icons.schedule_outlined), label: 'Jadwal'),
+          const NavigationDestination(
+              icon: Icon(Icons.fact_check_outlined), label: 'Nilai'),
           NavigationDestination(
               icon: ValueListenableBuilder<int>(
                 valueListenable: _unread,

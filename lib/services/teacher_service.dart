@@ -63,4 +63,53 @@ class TeacherService {
   Future<void> markAllNotificationsRead() async {
     await _client.post('/v1/teacher/notifications/read-all');
   }
+
+  Future<ClassesData> classes() async => ClassesData.fromJson(
+      await _client.get('/v1/teacher/classes') as Map<String, dynamic>);
+
+  Future<List<StudentInfo>> students(int gradeId) async {
+    final data =
+        await _client.get('/v1/teacher/classes/$gradeId/students') as List<dynamic>;
+    return data
+        .map((e) => StudentInfo.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<GradeSheet> gradeSheet({
+    required int gradeId,
+    required int subjectId,
+    required int examPeriodId,
+  }) async {
+    final res = await _client.getEnvelope(
+      '/v1/teacher/classes/$gradeId/subjects/$subjectId/grades',
+      query: {'exam_period_id': '$examPeriodId'},
+    );
+    final meta = res['meta'] as Map<String, dynamic>;
+    return GradeSheet(
+      rows: (res['data'] as List<dynamic>)
+          .map((e) => GradeRow.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      kkm: (meta['kkm'] as num?)?.toDouble(),
+    );
+  }
+
+  /// [values] maps student id -> score (0–100). Only send the cells that changed.
+  Future<SaveResult> saveGrades({
+    required int gradeId,
+    required int subjectId,
+    required int examPeriodId,
+    required Map<int, double> values,
+  }) async {
+    final data = await _client.put(
+      '/v1/teacher/classes/$gradeId/subjects/$subjectId/grades',
+      body: {
+        'exam_period_id': examPeriodId,
+        'grades': [
+          for (final e in values.entries)
+            {'student_id': e.key, 'grade_value': e.value},
+        ],
+      },
+    ) as Map<String, dynamic>;
+    return SaveResult.fromJson(data);
+  }
 }

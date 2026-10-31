@@ -298,3 +298,178 @@ List<T> _list<T>(dynamic raw, T Function(Map<String, dynamic>) parse) =>
     (raw as List<dynamic>? ?? const [])
         .map((e) => parse(e as Map<String, dynamic>))
         .toList();
+
+// ---- Classes and grade entry (/classes, /classes/{g}/students, .../grades) ----
+
+class SubjectInfo {
+  const SubjectInfo({
+    required this.id,
+    required this.name,
+    required this.path,
+    this.kkm,
+  });
+
+  final int id;
+  final String name;
+
+  /// Parent chain, e.g. `Rumpun → Fiqih`.
+  final String path;
+  final double? kkm;
+
+  factory SubjectInfo.fromJson(Map<String, dynamic> j) => SubjectInfo(
+        id: j['id'] as int,
+        name: j['name'] as String? ?? '',
+        path: j['path'] as String? ?? j['name'] as String? ?? '',
+        kkm: (j['kkm'] as num?)?.toDouble(),
+      );
+}
+
+class ClassInfo {
+  const ClassInfo({
+    required this.id,
+    required this.name,
+    required this.isHomeroom,
+    required this.studentCount,
+    required this.subjects,
+  });
+
+  final int id;
+  final String name;
+  final bool isHomeroom;
+  final int studentCount;
+  final List<SubjectInfo> subjects;
+
+  factory ClassInfo.fromJson(Map<String, dynamic> j) => ClassInfo(
+        id: j['id'] as int,
+        name: j['name'] as String? ?? '',
+        isHomeroom: j['is_homeroom'] as bool? ?? false,
+        studentCount: j['student_count'] as int? ?? 0,
+        subjects: _list(j['subjects'], SubjectInfo.fromJson),
+      );
+}
+
+class ExamPeriodInfo {
+  const ExamPeriodInfo({
+    required this.id,
+    required this.name,
+    this.startDate,
+    this.endDate,
+  });
+
+  final int id;
+  final String name;
+  final DateTime? startDate;
+  final DateTime? endDate;
+
+  factory ExamPeriodInfo.fromJson(Map<String, dynamic> j) => ExamPeriodInfo(
+        id: j['id'] as int,
+        name: j['name'] as String? ?? '',
+        startDate: DateTime.tryParse(j['start_date'] as String? ?? ''),
+        endDate: DateTime.tryParse(j['end_date'] as String? ?? ''),
+      );
+
+  bool contains(DateTime day) {
+    final d = DateTime(day.year, day.month, day.day);
+    return startDate != null &&
+        endDate != null &&
+        !d.isBefore(startDate!) &&
+        !d.isAfter(endDate!);
+  }
+}
+
+class ClassesData {
+  const ClassesData({
+    this.semesterName,
+    required this.classes,
+    required this.examPeriods,
+  });
+
+  final String? semesterName;
+  final List<ClassInfo> classes;
+  final List<ExamPeriodInfo> examPeriods;
+
+  factory ClassesData.fromJson(Map<String, dynamic> j) {
+    final semester = j['semester'] as Map<String, dynamic>?;
+    return ClassesData(
+      semesterName: semester == null
+          ? null
+          : '${semester['name'] ?? ''} ${semester['year'] ?? ''}'.trim(),
+      classes: _list(j['classes'], ClassInfo.fromJson),
+      examPeriods: _list(j['exam_periods'], ExamPeriodInfo.fromJson),
+    );
+  }
+
+  /// The period running today, else the latest one already started, else the first.
+  ExamPeriodInfo? defaultPeriod(DateTime today) {
+    if (examPeriods.isEmpty) return null;
+    for (final p in examPeriods) {
+      if (p.contains(today)) return p;
+    }
+    final started = examPeriods
+        .where((p) => p.startDate != null && !p.startDate!.isAfter(today))
+        .toList();
+    return started.isNotEmpty ? started.last : examPeriods.first;
+  }
+}
+
+class StudentInfo {
+  const StudentInfo({required this.id, required this.name, this.nis});
+
+  final int id;
+  final String name;
+  final String? nis;
+
+  factory StudentInfo.fromJson(Map<String, dynamic> j) => StudentInfo(
+        id: j['id'] as int,
+        name: j['name'] as String? ?? '',
+        nis: j['nis'] as String?,
+      );
+}
+
+class GradeRow {
+  const GradeRow({
+    required this.studentId,
+    required this.name,
+    this.nis,
+    this.value,
+    this.letter,
+    this.predicate,
+  });
+
+  final int studentId;
+  final String name;
+  final String? nis;
+  final double? value;
+  final String? letter;
+  final String? predicate;
+
+  factory GradeRow.fromJson(Map<String, dynamic> j) => GradeRow(
+        studentId: j['student_id'] as int,
+        name: j['name'] as String? ?? '',
+        nis: j['nis'] as String?,
+        value: (j['grade_value'] as num?)?.toDouble(),
+        letter: j['grade_letter'] as String?,
+        predicate: j['predicate'] as String?,
+      );
+}
+
+class GradeSheet {
+  const GradeSheet({required this.rows, this.kkm});
+
+  final List<GradeRow> rows;
+
+  /// 0 or null = no KKM configured.
+  final double? kkm;
+}
+
+class SaveResult {
+  const SaveResult({required this.saved, required this.skipped});
+
+  final int saved;
+  final int skipped;
+
+  factory SaveResult.fromJson(Map<String, dynamic> j) => SaveResult(
+        saved: j['saved'] as int? ?? 0,
+        skipped: j['skipped'] as int? ?? 0,
+      );
+}
