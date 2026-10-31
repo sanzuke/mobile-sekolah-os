@@ -65,6 +65,7 @@ class AgendaItem {
     this.id = 0,
     required this.title,
     this.description,
+    this.type = '',
     required this.typeLabel,
     this.startDate,
     this.endDate,
@@ -77,6 +78,9 @@ class AgendaItem {
   final int id;
   final String title;
   final String? description;
+
+  /// Machine value of the event type (academic, exam, holiday, ...), for colouring.
+  final String type;
   final String typeLabel;
 
   /// `YYYY-MM-DD`; null in older payloads (`/home` before agenda endpoint).
@@ -91,6 +95,7 @@ class AgendaItem {
         id: j['id'] as int? ?? 0,
         title: j['title'] as String? ?? '',
         description: j['description'] as String?,
+        type: j['type'] as String? ?? '',
         typeLabel: j['type_label'] as String? ?? '',
         startDate: j['start_date'] as String?,
         endDate: j['end_date'] as String?,
@@ -200,6 +205,23 @@ class NotificationPage {
   final int unreadCount;
 }
 
+/// Attendance part of "Kewajiban pekan ini": lessons already held this week vs recorded.
+class WeekDuty {
+  const WeekDuty({required this.done, required this.total, this.percent});
+
+  final int done;
+  final int total;
+
+  /// null when no lesson has fallen due yet this week.
+  final int? percent;
+
+  factory WeekDuty.fromJson(Map<String, dynamic> j) => WeekDuty(
+        done: (j['done'] as num?)?.toInt() ?? 0,
+        total: (j['total'] as num?)?.toInt() ?? 0,
+        percent: (j['percent'] as num?)?.toInt(),
+      );
+}
+
 class HomeData {
   const HomeData({
     required this.date,
@@ -213,9 +235,11 @@ class HomeData {
     required this.agenda,
     required this.announcements,
     this.unreadNotifications = 0,
+    this.attendanceDuty,
   });
 
   final int unreadNotifications;
+  final WeekDuty? attendanceDuty;
   final String date;
   final String? dayName;
   final String? semesterName;
@@ -248,6 +272,10 @@ class HomeData {
       agenda: _list(j['agenda'], AgendaItem.fromJson),
       announcements: _list(j['announcements'], Announcement.fromJson),
       unreadNotifications: j['unread_notifications'] as int? ?? 0,
+      attendanceDuty: switch ((j['duties'] as Map<String, dynamic>?)?['attendance']) {
+        final Map<String, dynamic> a => WeekDuty.fromJson(a),
+        _ => null,
+      },
     );
   }
 }

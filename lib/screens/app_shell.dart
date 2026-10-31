@@ -3,14 +3,14 @@ import 'package:flutter/material.dart';
 import '../services/teacher_service.dart';
 import '../state/session_controller.dart';
 import 'attendance_screen.dart';
-import 'classes_screen.dart';
 import 'home_screen.dart';
 import 'inbox_screen.dart';
+import 'quick_actions_sheet.dart';
 import 'schedule_screen.dart';
+import 'shell_actions.dart';
 
-/// Bottom-nav shell from the design: Beranda, Jadwal, Kotak masuk, Akun.
-/// Beranda, Jadwal, Nilai (kelas + input nilai), Kotak masuk (Pengumuman,
-/// Agenda, Notifikasi) and Akun are live.
+/// Shell from the design: Beranda, Jadwal, "+" (Aksi cepat), Kotak Masuk, Akun.
+/// Nilai/Akademik is not a tab; it is a menu under Semua menu.
 /// IndexedStack keeps each tab's loaded data when switching.
 class AppShell extends StatefulWidget {
   const AppShell({super.key, required this.session, required this.service});
@@ -23,33 +23,37 @@ class AppShell extends StatefulWidget {
 }
 
 class _AppShellState extends State<AppShell> {
-  int _index = 0;
+  int _index = kTabHome;
 
-  /// Unread notification count, shared by the nav badge, Beranda and Kotak masuk.
+  /// Unread notification count, shared by the nav badge, the bell and Kotak masuk.
   final ValueNotifier<int> _unread = ValueNotifier<int>(0);
+
+  /// Segment of Kotak masuk another screen wants open (-1 = none).
+  final ValueNotifier<int> _inboxSegment = ValueNotifier<int>(-1);
+
+  late final ShellActions _actions = ShellActions(
+    service: widget.service,
+    unread: _unread,
+    onUnauthorized: widget.session.logout,
+    goTab: (tab) => setState(() => _index = tab),
+    openInboxSegment: (segment) {
+      setState(() => _index = kTabInbox);
+      _inboxSegment.value = segment;
+    },
+  );
 
   @override
   void dispose() {
     _unread.dispose();
+    _inboxSegment.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final teacher = widget.session.teacher!;
     final pages = <Widget>[
-      HomeScreen(
-        teacher: teacher,
-        service: widget.service,
-        unread: _unread,
-        onUnauthorized: widget.session.logout,
-        onOpenSchedule: () => setState(() => _index = 1),
-      ),
+      HomeScreen(teacher: widget.session.teacher!, actions: _actions),
       ScheduleScreen(
-        service: widget.service,
-        onUnauthorized: widget.session.logout,
-      ),
-      ClassesScreen(
         service: widget.service,
         onUnauthorized: widget.session.logout,
       ),
@@ -57,37 +61,120 @@ class _AppShellState extends State<AppShell> {
         service: widget.service,
         unread: _unread,
         onUnauthorized: widget.session.logout,
+        segmentRequest: _inboxSegment,
       ),
-      _AccountPage(
-        session: widget.session,
-        service: widget.service,
-      ),
+      _AccountPage(session: widget.session, service: widget.service),
     ];
 
     return Scaffold(
       body: SafeArea(child: IndexedStack(index: _index, children: pages)),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: [
-          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Beranda'),
-          NavigationDestination(
-              icon: Icon(Icons.schedule_outlined), label: 'Jadwal'),
-          const NavigationDestination(
-              icon: Icon(Icons.fact_check_outlined), label: 'Nilai'),
-          NavigationDestination(
-              icon: ValueListenableBuilder<int>(
-                valueListenable: _unread,
-                builder: (_, count, _) => Badge(
-                  isLabelVisible: count > 0,
-                  label: Text('$count'),
-                  child: const Icon(Icons.inbox_outlined),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      floatingActionButton: FloatingActionButton(
+        tooltip: 'Aksi cepat',
+        shape: const CircleBorder(),
+        // The design's "+" is solid accent with a white glyph (the M3 default is a pale container).
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        foregroundColor: Theme.of(context).colorScheme.onPrimary,
+        onPressed: () => showQuickActions(context),
+        child: const Icon(Icons.add, size: 30),
+      ),
+      bottomNavigationBar: BottomAppBar(
+        shape: const CircularNotchedRectangle(),
+        notchMargin: 6,
+        padding: EdgeInsets.zero,
+        height: 64,
+        child: Row(
+          children: [
+            _NavItem(
+                label: 'Beranda',
+                icon: Icons.home_outlined,
+                selectedIcon: Icons.home,
+                selected: _index == kTabHome,
+                onTap: () => setState(() => _index = kTabHome)),
+            _NavItem(
+                label: 'Jadwal',
+                icon: Icons.calendar_today_outlined,
+                selectedIcon: Icons.calendar_today,
+                selected: _index == kTabSchedule,
+                onTap: () => setState(() => _index = kTabSchedule)),
+            const SizedBox(width: 64), // room for the docked "+"
+            _NavItem(
+                label: 'Kotak masuk',
+                icon: Icons.notifications_none,
+                selectedIcon: Icons.notifications,
+                badge: _unread,
+                selected: _index == kTabInbox,
+                onTap: () => setState(() => _index = kTabInbox)),
+            _NavItem(
+                label: 'Akun',
+                icon: Icons.person_outline,
+                selectedIcon: Icons.person,
+                selected: _index == kTabAccount,
+                onTap: () => setState(() => _index = kTabAccount)),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  const _NavItem({
+    required this.label,
+    required this.icon,
+    required this.selectedIcon,
+    required this.selected,
+    required this.onTap,
+    this.badge,
+  });
+
+  final String label;
+  final IconData icon;
+  final IconData selectedIcon;
+  final bool selected;
+  final VoidCallback onTap;
+  final ValueNotifier<int>? badge;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = selected
+        ? Theme.of(context).colorScheme.primary
+        : const Color(0xFF64748B);
+    Widget glyph = Icon(selected ? selectedIcon : icon, color: color, size: 24);
+    if (badge != null) {
+      glyph = ValueListenableBuilder<int>(
+        valueListenable: badge!,
+        builder: (_, count, child) =>
+            Badge(isLabelVisible: count > 0, label: Text('$count'), child: child),
+        child: glyph,
+      );
+    }
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: selected,
+        label: label,
+        child: InkWell(
+          onTap: onTap,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              glyph,
+              const SizedBox(height: 2),
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.visible,
+                softWrap: false,
+                style: TextStyle(
+                  fontSize: 11,
+                  color: color,
+                  fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
                 ),
               ),
-              label: 'Kotak masuk'),
-          NavigationDestination(
-              icon: Icon(Icons.person_outline), label: 'Akun'),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }

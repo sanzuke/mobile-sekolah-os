@@ -16,11 +16,16 @@ class InboxScreen extends StatefulWidget {
     required this.service,
     required this.unread,
     required this.onUnauthorized,
+    this.segmentRequest,
   });
 
   final TeacherService service;
   final ValueNotifier<int> unread;
   final VoidCallback onUnauthorized;
+
+  /// Other screens (bell, menu tiles) ask for a segment by setting a value >= 0;
+  /// it is consumed (reset to -1) so asking for the same segment again works.
+  final ValueNotifier<int>? segmentRequest;
 
   @override
   State<InboxScreen> createState() => _InboxScreenState();
@@ -28,6 +33,26 @@ class InboxScreen extends StatefulWidget {
 
 class _InboxScreenState extends State<InboxScreen> {
   int _segment = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.segmentRequest?.addListener(_onSegmentRequest);
+  }
+
+  @override
+  void dispose() {
+    widget.segmentRequest?.removeListener(_onSegmentRequest);
+    super.dispose();
+  }
+
+  void _onSegmentRequest() {
+    final request = widget.segmentRequest;
+    if (request == null || request.value < 0) return;
+    final segment = request.value;
+    request.value = -1;
+    setState(() => _segment = segment);
+  }
 
   @override
   Widget build(BuildContext context) {
