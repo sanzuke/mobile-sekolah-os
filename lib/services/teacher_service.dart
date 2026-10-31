@@ -1,3 +1,6 @@
+import 'package:http/http.dart' as http;
+
+import '../models/leave_models.dart';
 import '../models/teacher_models.dart';
 import 'api_client.dart';
 
@@ -153,4 +156,59 @@ class TeacherService {
       ],
     });
   }
+
+  Future<LeaveRequestPage> leaveRequests({String? status, int page = 1}) async {
+    final res = await _client.getEnvelope('/v1/teacher/leave-requests', query: {
+      'page': '$page',
+      'per_page': '20',
+      'status': ?status,
+    });
+    final meta = res['meta'] as Map<String, dynamic>;
+    return LeaveRequestPage(
+      items: (res['data'] as List<dynamic>)
+          .map((e) => LeaveRequest.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      lastPage: meta['last_page'] as int? ?? 1,
+      pendingCount: meta['pending_count'] as int? ?? 0,
+    );
+  }
+
+  Future<LeaveRequest> leaveRequest(int id) async => LeaveRequest.fromJson(
+      await _client.get('/v1/teacher/leave-requests/$id') as Map<String, dynamic>);
+
+  /// Dates are `YYYY-MM-DD`.
+  Future<LeavePreview> previewLeave(String startDate, String endDate) async =>
+      LeavePreview.fromJson(await _client.get('/v1/teacher/leave-requests/preview',
+          query: {'start_date': startDate, 'end_date': endDate})
+          as Map<String, dynamic>);
+
+  Future<LeaveRequest> submitLeave({
+    required String type,
+    required String startDate,
+    required String endDate,
+    required String reason,
+    String? attachmentName,
+    List<int>? attachmentBytes,
+  }) async =>
+      LeaveRequest.fromJson(await _client.postMultipart(
+        '/v1/teacher/leave-requests',
+        fields: {
+          'type': type,
+          'start_date': startDate,
+          'end_date': endDate,
+          'reason': reason,
+        },
+        files: [
+          if (attachmentBytes != null)
+            http.MultipartFile.fromBytes('attachment', attachmentBytes,
+                filename: attachmentName ?? 'lampiran'),
+        ],
+      ) as Map<String, dynamic>);
+
+  Future<LeaveRequest> cancelLeave(int id) async => LeaveRequest.fromJson(
+      await _client.post('/v1/teacher/leave-requests/$id/cancel')
+          as Map<String, dynamic>);
+
+  Future<List<int>> leaveAttachment(int id) =>
+      _client.getBytes('/v1/teacher/leave-requests/$id/attachment');
 }

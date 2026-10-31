@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'attendance_screen.dart';
 import 'classes_screen.dart';
 import 'inbox_screen.dart';
+import 'leave_requests_screen.dart';
 import 'lessons_screen.dart';
 import 'shell_actions.dart';
 
@@ -135,11 +136,13 @@ final List<MenuEntry> menuEntries = [
       label: 'Data & Dokumen',
       icon: Icons.work_outline,
       group: MenuGroup.kepegawaian),
-  const MenuEntry(
+  MenuEntry(
       id: 'izin',
       label: 'Izin / Cuti',
       icon: Icons.event_busy_outlined,
-      group: MenuGroup.kepegawaian),
+      group: MenuGroup.kepegawaian,
+      page: (context, a) => LeaveRequestsScreen(
+          service: a.service, onUnauthorized: a.onUnauthorized)),
   MenuEntry(
       id: 'rekap',
       label: 'Rekap Kehadiran',

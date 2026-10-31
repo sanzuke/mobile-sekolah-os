@@ -133,6 +133,19 @@ void main() {
         reason: 'the toast sits above the "+", not behind it');
   });
 
+  testWidgets('"Ajukan izin / cuti" in the "+" sheet opens the leave form',
+      (tester) async {
+    await _pumpShell(tester, _home());
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Ajukan izin / cuti'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Kirim pengajuan'), findsOneWidget);
+    expect(find.text('Ajukan izin / cuti akan segera hadir'), findsNothing);
+  });
+
   testWidgets('bottom bar has four tabs and a center "+" (no Nilai tab)',
       (tester) async {
     await _pumpShell(tester, _home());

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 import 'screens/app_shell.dart';
 import 'screens/login_screen.dart';
@@ -38,6 +39,10 @@ class SekolahOsApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Asatidz PPI 50',
+      // Dialogs and pickers (date range, etc.) speak Indonesian.
+      locale: const Locale('id'),
+      supportedLocales: const [Locale('id')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
       home: ListenableBuilder(

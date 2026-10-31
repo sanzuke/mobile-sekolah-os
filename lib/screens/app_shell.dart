@@ -93,7 +93,7 @@ class _AppShellState extends State<AppShell> {
         // The design's "+" is solid accent with a white glyph (the M3 default is a pale container).
         backgroundColor: Theme.of(context).colorScheme.primary,
         foregroundColor: Theme.of(context).colorScheme.onPrimary,
-        onPressed: () => showQuickActions(context),
+        onPressed: () => showQuickActions(context, _actions),
         child: const Icon(Icons.add, size: 30),
       ),
       bottomNavigationBar: BottomAppBar(

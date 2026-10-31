@@ -62,6 +62,33 @@ class ApiClient {
     return _unwrap(response);
   }
 
+  /// `multipart/form-data` POST (a leave request with its attachment).
+  Future<dynamic> postMultipart(
+    String path, {
+    required Map<String, String> fields,
+    List<http.MultipartFile> files = const [],
+  }) async {
+    final request = http.MultipartRequest('POST', _uri(path))
+      ..fields.addAll(fields)
+      ..files.addAll(files)
+      ..headers['Accept'] = 'application/json';
+    if (_token != null) request.headers['Authorization'] = 'Bearer $_token';
+    final response = await http.Response.fromStream(await _client.send(request));
+    return _unwrap(response);
+  }
+
+  /// Raw bytes of a download (an attachment); errors still come as the envelope.
+  Future<List<int>> getBytes(String path) async {
+    final response = await _client.get(_uri(path), headers: {
+      if (_token != null) 'Authorization': 'Bearer $_token',
+    });
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return response.bodyBytes;
+    }
+    _unwrap(response); // throws the ApiException
+    return const [];
+  }
+
   Future<dynamic> put(String path, {Map<String, dynamic>? body}) async {
     final response = await _client.put(
       _uri(path),
