@@ -117,6 +117,22 @@ void main() {
     expect(find.text('0%'), findsNothing);
   });
 
+  testWidgets('a toast shows above the "+" without moving it', (tester) async {
+    await _pumpShell(tester, _home());
+    final fab = find.byType(FloatingActionButton);
+    final before = tester.getRect(fab);
+
+    ScaffoldMessenger.of(tester.element(fab))
+        .showSnackBar(const SnackBar(content: Text('Contoh toast')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Contoh toast'), findsOneWidget);
+    expect(tester.getRect(fab), before, reason: 'the "+" must stay put');
+    expect(tester.getRect(find.byType(SnackBar)).bottom,
+        lessThanOrEqualTo(before.top),
+        reason: 'the toast sits above the "+", not behind it');
+  });
+
   testWidgets('bottom bar has four tabs and a center "+" (no Nilai tab)',
       (tester) async {
     await _pumpShell(tester, _home());

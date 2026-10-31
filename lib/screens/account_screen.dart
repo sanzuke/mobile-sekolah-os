@@ -6,6 +6,7 @@ import '../services/update_service.dart';
 import '../state/session_controller.dart';
 import '../widgets/date_format.dart';
 import '../widgets/surface_cards.dart';
+import '../widgets/teacher_avatar.dart';
 import 'changelog_screen.dart';
 
 /// "Akun" as in the design: profile card, a list of settings rows, and Keluar.
@@ -105,7 +106,7 @@ class AccountScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                _Avatar(teacher: teacher),
+                TeacherAvatar(teacher: teacher),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
@@ -206,34 +207,6 @@ class AccountScreen extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-}
-
-class _Avatar extends StatelessWidget {
-  const _Avatar({required this.teacher});
-
-  final AuthenticatedTeacher teacher;
-
-  @override
-  Widget build(BuildContext context) {
-    final scheme = Theme.of(context).colorScheme;
-    final initials = Container(
-      color: scheme.primary,
-      alignment: Alignment.center,
-      child: Text(teacher.initials,
-          style: const TextStyle(
-              color: Colors.white, fontSize: 20, fontWeight: FontWeight.w800)),
-    );
-    return ClipOval(
-      child: SizedBox(
-        width: 60,
-        height: 60,
-        child: teacher.photoUrl == null
-            ? initials
-            : Image.network(teacher.photoUrl!,
-                fit: BoxFit.cover, errorBuilder: (_, _, _) => initials),
-      ),
     );
   }
 }

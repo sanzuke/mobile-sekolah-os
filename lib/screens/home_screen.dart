@@ -6,6 +6,7 @@ import '../widgets/async_view.dart';
 import '../widgets/date_format.dart';
 import '../widgets/menu_tile.dart';
 import '../widgets/surface_cards.dart';
+import '../widgets/teacher_avatar.dart';
 import 'announcement_detail_screen.dart';
 import 'lessons_screen.dart';
 import 'menu_entries.dart';
@@ -58,11 +59,7 @@ class HomeScreen extends StatelessWidget {
               onAction: () => Navigator.of(context).push(MaterialPageRoute(
                   builder: (_) => MenuScreen(actions: actions))),
             ),
-            GridView.count(
-              crossAxisCount: 4,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              childAspectRatio: 0.78,
+            MenuGrid(
               children: [
                 for (final id in _homeTiles)
                   MenuTile.entry(menuEntry(id),
@@ -72,7 +69,6 @@ class HomeScreen extends StatelessWidget {
                 MenuTile(
                   label: 'Semua',
                   icon: Icons.grid_view_rounded,
-                  neutral: true,
                   onTap: () => Navigator.of(context).push(MaterialPageRoute(
                       builder: (_) => MenuScreen(actions: actions))),
                 ),
@@ -140,62 +136,201 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final text = Theme.of(context).textTheme;
-    final scheme = Theme.of(context).colorScheme;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text("Assalamu'alaikum,", style: text.bodyMedium),
-              Text(teacher.name,
-                  style: text.titleLarge?.copyWith(fontWeight: FontWeight.w800)),
-              Text(
-                [
-                  [if (data.dayName != null) data.dayName!, formatDate(data.date)]
-                      .join(', '),
-                  teacher.isHomeroom ? 'Wali Kelas' : 'Guru Mapel',
-                ].join(' · '),
-                style: text.bodySmall,
-              ),
-            ],
-          ),
+    final parts = teacher.nameParts;
+    final date = [if (data.dayName != null) data.dayName!, formatDate(data.date)]
+        .join(', ');
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(24),
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [Color(0xFF0F766E), Color(0xFF064E3B)],
         ),
-        const SizedBox(width: 12),
-        ValueListenableBuilder<int>(
-          valueListenable: actions.unread,
-          builder: (_, count, _) => Material(
-            color: Colors.white,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-              side: const BorderSide(color: Color(0xFFE2E8F0)),
-            ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(14),
-              onTap: () => actions.openInboxSegment(kInboxNotifications),
-              child: SizedBox(
-                width: 48,
-                height: 48,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    Icon(Icons.notifications_none, color: scheme.onSurface),
-                    if (count > 0)
-                      const Positioned(
-                        top: 11,
-                        right: 12,
-                        child: CircleAvatar(
-                            radius: 5, backgroundColor: Color(0xFFDC2626)),
+        boxShadow: const [
+          BoxShadow(
+              color: Color(0x330F766E), blurRadius: 18, offset: Offset(0, 8)),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(24),
+        child: Stack(
+          children: [
+            // Soft rings in the corner, purely decorative.
+            Positioned(right: -36, top: -36, child: _Ring(size: 150)),
+            Positioned(right: 30, top: 54, child: _Ring(size: 70)),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(18, 18, 14, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(2.5),
+                        decoration: const BoxDecoration(
+                            color: Colors.white, shape: BoxShape.circle),
+                        child: TeacherAvatar(
+                          teacher: teacher,
+                          size: 54,
+                          background: const Color(0xFFCCFBF1),
+                          foreground: const Color(0xFF0F766E),
+                        ),
                       ),
-                  ],
-                ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text("Assalamu'alaikum,",
+                                  style: TextStyle(
+                                      color: Color(0xCCFFFFFF), fontSize: 13)),
+                              const SizedBox(height: 2),
+                              Text.rich(
+                                TextSpan(children: [
+                                  TextSpan(
+                                      text: parts.main,
+                                      style: const TextStyle(
+                                          fontSize: 21,
+                                          fontWeight: FontWeight.w800)),
+                                  if (parts.degrees.isNotEmpty)
+                                    TextSpan(
+                                        text: ' ${parts.degrees}',
+                                        style: const TextStyle(
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w500,
+                                            color: Color(0xE6FFFFFF))),
+                                ]),
+                                style: const TextStyle(
+                                    color: Colors.white, height: 1.2),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      _Bell(actions: actions),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _Chip(
+                        icon: teacher.isHomeroom
+                            ? Icons.workspace_premium_outlined
+                            : Icons.menu_book_outlined,
+                        label: teacher.isHomeroom ? 'Wali Kelas' : 'Guru Mapel',
+                        solid: true,
+                      ),
+                      if (data.academicYear != null)
+                        _Chip(
+                            icon: Icons.school_outlined,
+                            label: 'TA ${data.academicYear}'),
+                      _Chip(icon: Icons.calendar_today_outlined, label: date),
+                    ],
+                  ),
+                ],
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _Ring extends StatelessWidget {
+  const _Ring({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(color: const Color(0x1FFFFFFF), width: 1.5),
+        ),
+      );
+}
+
+class _Chip extends StatelessWidget {
+  const _Chip({required this.icon, required this.label, this.solid = false});
+
+  final IconData icon;
+  final String label;
+
+  /// The role chip is white on teal; the others are a translucent wash.
+  final bool solid;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = solid ? const Color(0xFF0F766E) : Colors.white;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: solid ? Colors.white : const Color(0x26FFFFFF),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 14, color: fg),
+          const SizedBox(width: 5),
+          Text(label,
+              style: TextStyle(
+                  color: fg, fontSize: 12, fontWeight: FontWeight.w700)),
+        ],
+      ),
+    );
+  }
+}
+
+class _Bell extends StatelessWidget {
+  const _Bell({required this.actions});
+
+  final ShellActions actions;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<int>(
+      valueListenable: actions.unread,
+      builder: (_, count, _) => Material(
+        color: const Color(0x2EFFFFFF),
+        shape: const CircleBorder(),
+        child: InkWell(
+          customBorder: const CircleBorder(),
+          onTap: () => actions.openInboxSegment(kInboxNotifications),
+          child: SizedBox(
+            width: 44,
+            height: 44,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                const Icon(Icons.notifications_none, color: Colors.white),
+                if (count > 0)
+                  Positioned(
+                    top: 9,
+                    right: 10,
+                    child: Container(
+                      padding: const EdgeInsets.all(1.5),
+                      decoration: const BoxDecoration(
+                          color: Color(0xFF064E3B), shape: BoxShape.circle),
+                      child: const CircleAvatar(
+                          radius: 5, backgroundColor: Color(0xFFFB7185)),
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
-      ],
+      ),
     );
   }
 }

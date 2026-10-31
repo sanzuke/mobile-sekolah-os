@@ -38,6 +38,21 @@ class AuthenticatedTeacher {
     );
   }
 
+  /// The name to show big, and the academic degrees to show small after it:
+  /// "Anggi Gusela S.Pd. M.Ag." -> ("Anggi Gusela", "S.Pd. M.Ag."). Degrees start
+  /// at the first word (after the first) that has a "." inside, or that follows a
+  /// word ending in ","; a leading "H." or "Dr." stays with the name.
+  ({String main, String degrees}) get nameParts {
+    final words = name.trim().split(RegExp(r'\s+'));
+    for (var i = 1; i < words.length; i++) {
+      if (words[i].contains('.') || words[i - 1].endsWith(',')) {
+        final main = words.sublist(0, i).join(' ').replaceAll(RegExp(r',$'), '');
+        return (main: main, degrees: words.sublist(i).join(' '));
+      }
+    }
+    return (main: name.trim(), degrees: '');
+  }
+
   /// Two letters for the avatar. Degrees ("S.Pd.", "M.Ag.") are skipped; a one-word
   /// name uses its first two letters ("Farhahd" -> FA).
   String get initials {

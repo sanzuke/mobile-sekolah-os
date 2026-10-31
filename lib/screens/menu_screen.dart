@@ -64,11 +64,7 @@ class _MenuScreenState extends State<MenuScreen> {
               child: Text(group.title,
                   style: Theme.of(context).textTheme.titleMedium),
             ),
-            GridView.count(
-              crossAxisCount: 4,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              childAspectRatio: 0.78,
+            MenuGrid(
               children: [
                 for (final e in entries)
                   MenuTile.entry(
