@@ -211,4 +211,14 @@ class TeacherService {
 
   Future<List<int>> leaveAttachment(int id) =>
       _client.getBytes('/v1/teacher/leave-requests/$id/attachment');
+
+  /// Registers this phone for push (`token` is the FCM registration token).
+  Future<void> registerDevice(String token) async {
+    await _client.post('/v1/teacher/devices',
+        body: {'token': token, 'platform': 'android'});
+  }
+
+  Future<void> unregisterDevice(String token) async {
+    await _client.delete('/v1/teacher/devices', body: {'token': token});
+  }
 }

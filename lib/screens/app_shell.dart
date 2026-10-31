@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../models/teacher_models.dart';
+import '../services/push_messaging.dart';
 import '../services/teacher_service.dart';
 import '../services/update_service.dart';
 import '../state/notification_watcher.dart';
@@ -8,6 +11,7 @@ import '../state/session_controller.dart';
 import 'account_screen.dart';
 import 'home_screen.dart';
 import 'inbox_screen.dart';
+import 'leave_detail_screen.dart';
 import 'notification_target.dart';
 import 'quick_actions_sheet.dart';
 import 'schedule_screen.dart';
@@ -22,11 +26,13 @@ class AppShell extends StatefulWidget {
     required this.session,
     required this.service,
     required this.updater,
+    this.push = const NoPushMessaging(),
   });
 
   final SessionController session;
   final TeacherService service;
   final AppUpdater updater;
+  final PushMessaging push;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -102,10 +108,38 @@ class _AppShellState extends State<AppShell> {
     if (mounted) _notificationsVersion.value++;
   }
 
+  final List<StreamSubscription<PushMessage>> _pushSubs = [];
+
+  /// The user tapped a push: open what it is about and read it.
+  Future<void> _openFromPush(PushMessage m) async {
+    if (!mounted) return;
+    if (m.notificationId != null) {
+      widget.service.markNotificationRead(m.notificationId!).catchError((_) {});
+      _watcher.check();
+    }
+    if (m.type == 'leave_request' && m.leaveRequestId != null) {
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => LeaveDetailScreen(
+              service: widget.service,
+              onUnauthorized: widget.session.logout,
+              id: m.leaveRequestId!)));
+    } else if (m.type != null) {
+      _actions.openInboxSegment(kInboxNotifications);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     _watcher.start();
+    _pushSubs
+      // The system shows nothing while the app is open: look right away so the
+      // toast appears now instead of at the next 45-second tick.
+      ..add(widget.push.onForeground.listen((_) => _watcher.check()))
+      ..add(widget.push.onOpened.listen(_openFromPush));
+    widget.push.initialMessage().then((m) {
+      if (m != null) _openFromPush(m);
+    });
   }
 
   late final ShellActions _actions = ShellActions(
@@ -122,6 +156,9 @@ class _AppShellState extends State<AppShell> {
 
   @override
   void dispose() {
+    for (final s in _pushSubs) {
+      s.cancel();
+    }
     _watcher.stop();
     _notificationsVersion.dispose();
     _unread.dispose();

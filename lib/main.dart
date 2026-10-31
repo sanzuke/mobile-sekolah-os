@@ -5,21 +5,31 @@ import 'screens/app_shell.dart';
 import 'screens/login_screen.dart';
 import 'services/api_client.dart';
 import 'services/auth_service.dart';
+import 'services/push_messaging.dart';
 import 'services/teacher_service.dart';
 import 'services/update_service.dart';
+import 'state/push_registrar.dart';
 import 'state/session_controller.dart';
 import 'theme/app_theme.dart';
 
-void main() {
+Future<void> main() async {
   // Secure storage (session restore) uses a platform channel; the binding must
   // exist before SessionController.start() touches it.
   WidgetsFlutterBinding.ensureInitialized();
+  // Falls back to "no push" if Firebase cannot start; never blocks the app.
+  final messaging = FirebasePushMessaging();
+  await messaging.init();
   final client = ApiClient();
-  final session = SessionController(AuthService(client: client))..start();
+  final service = TeacherService(client);
+  final session = SessionController(
+    AuthService(client: client),
+    push: PushRegistrar(service: service, messaging: messaging),
+  )..start();
   runApp(SekolahOsApp(
     session: session,
-    service: TeacherService(client),
+    service: service,
     updater: HttpAppUpdater(client: client),
+    push: messaging,
   ));
 }
 
@@ -29,11 +39,13 @@ class SekolahOsApp extends StatelessWidget {
     required this.session,
     required this.service,
     required this.updater,
+    this.push = const NoPushMessaging(),
   });
 
   final SessionController session;
   final TeacherService service;
   final AppUpdater updater;
+  final PushMessaging push;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +63,12 @@ class SekolahOsApp extends StatelessWidget {
           SessionStatus.loading =>
             const Scaffold(body: Center(child: CircularProgressIndicator())),
           SessionStatus.signedOut => LoginScreen(session: session),
-          SessionStatus.signedIn => AppShell(session: session, service: service, updater: updater),
+          SessionStatus.signedIn => AppShell(
+              session: session,
+              service: service,
+              updater: updater,
+              push: push,
+            ),
         },
       ),
     );

@@ -3,15 +3,19 @@ import 'package:flutter/foundation.dart';
 import '../services/api_client.dart';
 import '../services/auth_service.dart';
 import '../services/biometric_service.dart';
+import 'push_registrar.dart';
 
 enum SessionStatus { loading, signedOut, signedIn }
 
 class SessionController extends ChangeNotifier {
-  SessionController(this._auth, {BiometricLogin? biometric})
-      : _biometric = biometric ?? BiometricLogin();
+  SessionController(this._auth, {BiometricLogin? biometric, PushRegistrar? push})
+      : _biometric = biometric ?? BiometricLogin(),
+        // ignore: prefer_initializing_formals
+        _push = push;
 
   final AuthService _auth;
   final BiometricLogin _biometric;
+  final PushRegistrar? _push;
 
   /// Device has biometrics enrolled, and the teacher turned the feature on.
   bool biometricAvailable = false;
@@ -33,6 +37,7 @@ class SessionController extends ChangeNotifier {
     await refreshBiometric();
     status = teacher == null ? SessionStatus.signedOut : SessionStatus.signedIn;
     notifyListeners();
+    if (teacher != null) _push?.register();
   }
 
   Future<void> refreshBiometric() async {
@@ -58,6 +63,7 @@ class SessionController extends ChangeNotifier {
     try {
       teacher = await _auth.login(saved.email, saved.password);
       status = SessionStatus.signedIn;
+      _push?.register();
     } on ApiException catch (e) {
       if (e.statusCode == 401 || e.statusCode == 422) {
         // Password changed (or account disabled): the stored one is useless.
@@ -110,6 +116,7 @@ class SessionController extends ChangeNotifier {
     try {
       teacher = await _auth.login(email.trim(), password);
       status = SessionStatus.signedIn;
+      _push?.register();
     } on ApiException catch (e) {
       error = e.message;
     } catch (_) {
@@ -120,6 +127,8 @@ class SessionController extends ChangeNotifier {
   }
 
   Future<void> logout() async {
+    // While the API token is still valid: stop pushing to this phone.
+    await _push?.unregister();
     await _auth.logout();
     teacher = null;
     status = SessionStatus.signedOut;

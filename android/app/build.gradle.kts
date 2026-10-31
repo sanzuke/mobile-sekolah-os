@@ -11,6 +11,8 @@ plugins {
     id("com.android.application")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    // Applied at the bottom, and only when google-services.json is present.
+    id("com.google.gms.google-services") apply false
 }
 
 android {
@@ -69,4 +71,9 @@ flutter {
 dependencies {
     // local_auth's biometric prompt needs an AppCompat launch theme (see styles.xml).
     implementation("androidx.appcompat:appcompat:1.7.0")
+}
+
+// Firebase (push) config. Not in git: without it the app still builds, push is just off.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
 }

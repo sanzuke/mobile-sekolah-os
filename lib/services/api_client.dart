@@ -62,6 +62,14 @@ class ApiClient {
     return _unwrap(response);
   }
 
+  /// DELETE with a JSON body (unregistering a phone's push token).
+  Future<dynamic> delete(String path, {Map<String, dynamic>? body}) async {
+    final request = http.Request('DELETE', _uri(path))
+      ..headers.addAll(_headers)
+      ..body = body != null ? jsonEncode(body) : '';
+    return _unwrap(await http.Response.fromStream(await _client.send(request)));
+  }
+
   /// `multipart/form-data` POST (a leave request with its attachment).
   Future<dynamic> postMultipart(
     String path, {
