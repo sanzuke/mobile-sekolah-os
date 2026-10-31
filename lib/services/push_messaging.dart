@@ -5,11 +5,16 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 
 /// What a push says, reduced to what the app acts on (the FCM `data` map).
 class PushMessage {
-  const PushMessage({this.type, this.leaveRequestId, this.notificationId});
+  const PushMessage(
+      {this.type,
+      this.leaveRequestId,
+      this.meetingMinuteId,
+      this.notificationId});
 
-  /// `leave_request` (more later).
+  /// `leave_request` or `meeting_minute` (more later).
   final String? type;
   final int? leaveRequestId;
+  final int? meetingMinuteId;
 
   /// The in-app notification this push mirrors (to mark it read when opened).
   final String? notificationId;
@@ -17,6 +22,7 @@ class PushMessage {
   factory PushMessage.fromData(Map<String, dynamic> data) => PushMessage(
         type: data['type'] as String?,
         leaveRequestId: int.tryParse('${data['leave_request_id'] ?? ''}'),
+        meetingMinuteId: int.tryParse('${data['meeting_minute_id'] ?? ''}'),
         notificationId: data['notification_id'] as String?,
       );
 }

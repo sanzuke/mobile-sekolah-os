@@ -12,6 +12,7 @@ import 'account_screen.dart';
 import 'home_screen.dart';
 import 'inbox_screen.dart';
 import 'leave_detail_screen.dart';
+import 'meeting_minute_detail_screen.dart';
 import 'notification_target.dart';
 import 'quick_actions_sheet.dart';
 import 'schedule_screen.dart';
@@ -123,6 +124,12 @@ class _AppShellState extends State<AppShell> {
               service: widget.service,
               onUnauthorized: widget.session.logout,
               id: m.leaveRequestId!)));
+    } else if (m.type == 'meeting_minute' && m.meetingMinuteId != null) {
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => MeetingMinuteDetailScreen(
+              service: widget.service,
+              onUnauthorized: widget.session.logout,
+              id: m.meetingMinuteId!)));
     } else if (m.type != null) {
       _actions.openInboxSegment(kInboxNotifications);
     }

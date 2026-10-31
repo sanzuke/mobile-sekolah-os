@@ -4,6 +4,7 @@ import 'attendance_screen.dart';
 import 'classes_screen.dart';
 import 'inbox_screen.dart';
 import 'leave_requests_screen.dart';
+import 'meeting_minutes_screen.dart';
 import 'lessons_screen.dart';
 import 'shell_actions.dart';
 
@@ -110,11 +111,13 @@ final List<MenuEntry> menuEntries = [
       label: 'Agenda Pribadi',
       icon: Icons.event_note_outlined,
       group: MenuGroup.kegiatan),
-  const MenuEntry(
+  MenuEntry(
       id: 'rapat',
       label: 'Rapat & Notulen',
       icon: Icons.groups_outlined,
-      group: MenuGroup.kegiatan),
+      group: MenuGroup.kegiatan,
+      page: (context, a) => MeetingMinutesScreen(
+          service: a.service, onUnauthorized: a.onUnauthorized)),
   const MenuEntry(
       id: 'task',
       label: 'Task',

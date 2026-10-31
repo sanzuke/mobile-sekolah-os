@@ -1,6 +1,7 @@
 import 'package:http/http.dart' as http;
 
 import '../models/leave_models.dart';
+import '../models/meeting_models.dart';
 import '../models/teacher_models.dart';
 import 'api_client.dart';
 
@@ -211,6 +212,55 @@ class TeacherService {
 
   Future<List<int>> leaveAttachment(int id) =>
       _client.getBytes('/v1/teacher/leave-requests/$id/attachment');
+
+  /// [scope] is `mine` (incl. drafts) or `attended` (final minutes of others).
+  Future<MeetingMinutePage> meetingMinutes(
+      {String scope = 'mine', int page = 1}) async {
+    final res = await _client.getEnvelope('/v1/teacher/meeting-minutes',
+        query: {'scope': scope, 'page': '$page', 'per_page': '20'});
+    final meta = res['meta'] as Map<String, dynamic>;
+    return MeetingMinutePage(
+      items: (res['data'] as List<dynamic>)
+          .map((e) => MeetingMinute.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      lastPage: meta['last_page'] as int? ?? 1,
+    );
+  }
+
+  Future<MeetingMinute> meetingMinute(int id) async => MeetingMinute.fromJson(
+      await _client.get('/v1/teacher/meeting-minutes/$id')
+          as Map<String, dynamic>);
+
+  Future<List<TeacherOption>> teacherOptions(String query) async =>
+      (await _client.get('/v1/teacher/meeting-minutes/attendee-options',
+              query: {'q': query}) as List<dynamic>)
+          .map((e) => TeacherOption.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+  /// Creates the minutes, or replaces a draft's content when [id] is given.
+  /// `finalize: true` in [body] publishes in the same call.
+  Future<MeetingMinute> saveMeetingMinute(Map<String, dynamic> body,
+      {int? id}) async {
+    final data = id == null
+        ? await _client.post('/v1/teacher/meeting-minutes', body: body)
+        : await _client.put('/v1/teacher/meeting-minutes/$id', body: body);
+    return MeetingMinute.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<MeetingMinute> finalizeMeetingMinute(int id) async =>
+      MeetingMinute.fromJson(
+          await _client.post('/v1/teacher/meeting-minutes/$id/finalize')
+              as Map<String, dynamic>);
+
+  Future<MeetingAction> setMeetingActionDone(
+          int minuteId, int actionId, bool done) async =>
+      MeetingAction.fromJson(await _client.post(
+          '/v1/teacher/meeting-minutes/$minuteId/actions/$actionId/done',
+          body: {'done': done}) as Map<String, dynamic>);
+
+  Future<void> deleteMeetingMinute(int id) async {
+    await _client.delete('/v1/teacher/meeting-minutes/$id');
+  }
 
   /// Registers this phone for push (`token` is the FCM registration token).
   Future<void> registerDevice(String token) async {
