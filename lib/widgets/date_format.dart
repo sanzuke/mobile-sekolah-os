@@ -26,3 +26,17 @@ String formatDateTime(DateTime utcOrLocal) {
   final mm = d.minute.toString().padLeft(2, '0');
   return '${d.day} ${_months[d.month - 1]} ${d.year}, $hh:$mm';
 }
+
+const _monthNames = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember',
+];
+
+/// `2026-10` -> `Oktober 2026`.
+String formatMonth(String yearMonth) {
+  final parts = yearMonth.split('-');
+  if (parts.length != 2) return yearMonth;
+  final m = int.tryParse(parts[1]);
+  if (m == null || m < 1 || m > 12) return yearMonth;
+  return '${_monthNames[m - 1]} ${parts[0]}';
+}

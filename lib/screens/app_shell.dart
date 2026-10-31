@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/teacher_service.dart';
 import '../state/session_controller.dart';
+import 'attendance_screen.dart';
 import 'classes_screen.dart';
 import 'home_screen.dart';
 import 'inbox_screen.dart';
@@ -57,7 +58,10 @@ class _AppShellState extends State<AppShell> {
         unread: _unread,
         onUnauthorized: widget.session.logout,
       ),
-      _AccountPage(session: widget.session),
+      _AccountPage(
+        session: widget.session,
+        service: widget.service,
+      ),
     ];
 
     return Scaffold(
@@ -90,9 +94,10 @@ class _AppShellState extends State<AppShell> {
 }
 
 class _AccountPage extends StatelessWidget {
-  const _AccountPage({required this.session});
+  const _AccountPage({required this.session, required this.service});
 
   final SessionController session;
+  final TeacherService service;
 
   @override
   Widget build(BuildContext context) {
@@ -117,6 +122,21 @@ class _AccountPage extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 24),
+        ListTile(
+          contentPadding: EdgeInsets.zero,
+          leading: const Icon(Icons.event_available_outlined),
+          title: const Text('Rekap kehadiran'),
+          subtitle: const Text('Presensi Anda dari mesin absen'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () => Navigator.of(context).push(MaterialPageRoute(
+            builder: (_) => AttendanceScreen(
+              service: service,
+              onUnauthorized: session.logout,
+            ),
+          )),
+        ),
+        const Divider(),
+        const SizedBox(height: 12),
         OutlinedButton.icon(
           onPressed: session.logout,
           icon: const Icon(Icons.logout),

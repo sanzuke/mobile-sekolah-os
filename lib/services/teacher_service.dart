@@ -112,4 +112,9 @@ class TeacherService {
     ) as Map<String, dynamic>;
     return SaveResult.fromJson(data);
   }
+
+  /// [month] is `YYYY-MM`; null = the current month (server, WIB).
+  Future<AttendanceMonth> attendance({String? month}) async =>
+      AttendanceMonth.fromJson(await _client.get('/v1/teacher/attendance/me',
+          query: month == null ? null : {'month': month}) as Map<String, dynamic>);
 }

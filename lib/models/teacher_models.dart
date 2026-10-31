@@ -473,3 +473,63 @@ class SaveResult {
         skipped: j['skipped'] as int? ?? 0,
       );
 }
+
+// ---- Own attendance (/attendance/me) ----
+
+class AttendanceDay {
+  const AttendanceDay({
+    required this.date,
+    this.dayName,
+    required this.status,
+    required this.statusLabel,
+    this.checkIn,
+    this.checkOut,
+    this.notes,
+  });
+
+  final String date;
+  final String? dayName;
+
+  /// present | late | absent | excused | sick | permission
+  final String status;
+  final String statusLabel;
+  final String? checkIn;
+  final String? checkOut;
+  final String? notes;
+
+  factory AttendanceDay.fromJson(Map<String, dynamic> j) => AttendanceDay(
+        date: j['date'] as String? ?? '',
+        dayName: j['day_name'] as String?,
+        status: j['status'] as String? ?? '',
+        statusLabel: j['status_label'] as String? ?? '',
+        checkIn: j['check_in'] as String?,
+        checkOut: j['check_out'] as String?,
+        notes: j['notes'] as String?,
+      );
+}
+
+class AttendanceMonth {
+  const AttendanceMonth({
+    required this.month,
+    required this.summary,
+    required this.days,
+  });
+
+  /// `YYYY-MM`.
+  final String month;
+
+  /// status -> count, plus `total`.
+  final Map<String, int> summary;
+  final List<AttendanceDay> days;
+
+  int count(String status) => summary[status] ?? 0;
+
+  factory AttendanceMonth.fromJson(Map<String, dynamic> j) {
+    final raw = j['summary'] as Map<String, dynamic>? ?? const {};
+    return AttendanceMonth(
+      month: j['month'] as String? ?? '',
+      summary: {for (final e in raw.entries) e.key: (e.value as num).toInt()},
+      days: _list(j['days'], AttendanceDay.fromJson),
+    );
+  }
+}
