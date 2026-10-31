@@ -16,7 +16,8 @@ param(
     [string]$Project = 'asatidz-persis-50',
     [switch]$DryRun
 )
-$ErrorActionPreference = 'Stop'
+# Native tools (flutter) print warnings to stderr; success is judged by exit code below.
+$ErrorActionPreference = 'Continue'
 Set-Location (Split-Path $PSScriptRoot -Parent)
 
 if (-not (Test-Path android/key.properties)) {

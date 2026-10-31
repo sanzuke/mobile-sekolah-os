@@ -167,6 +167,23 @@ void main() {
     expect(find.text('Pinjam kendaraan akan segera hadir'), findsOneWidget);
   });
 
+  testWidgets('Aksi cepat fits a landscape tablet (short screen): no overflow, last row reachable',
+      (tester) async {
+    await _pumpShell(tester, _home());
+    tester.view.physicalSize = const Size(1920, 1200); // 960 x 600 dp
+    tester.view.devicePixelRatio = 2.0;
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    await tester.scrollUntilVisible(find.text('Input notulen'), 100,
+        scrollable: find.descendant(
+            of: find.byType(BottomSheet), matching: find.byType(Scrollable)));
+    expect(find.text('Input notulen'), findsOneWidget);
+  });
+
   testWidgets('Semua menu lists groups, filters by search, opens Akademik',
       (tester) async {
     await _pumpShell(tester, _home());
