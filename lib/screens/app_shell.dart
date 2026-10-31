@@ -80,6 +80,7 @@ class _AppShellState extends State<AppShell> {
           label: 'Lihat',
           onPressed: () {
             if (single && hasNotificationTarget(first)) {
+              _markRead(first);
               openNotificationTarget(
                   context, widget.service, widget.session.logout, first);
             } else {
@@ -88,6 +89,17 @@ class _AppShellState extends State<AppShell> {
           },
         ),
       ));
+  }
+
+  /// Opening a notification from the toast reads it, like tapping its card does.
+  Future<void> _markRead(NotificationItem item) async {
+    _unread.value = (_unread.value - 1).clamp(0, 1 << 30);
+    try {
+      await widget.service.markNotificationRead(item.id);
+    } catch (_) {
+      // The next look at the server restores the real count.
+    }
+    if (mounted) _notificationsVersion.value++;
   }
 
   @override

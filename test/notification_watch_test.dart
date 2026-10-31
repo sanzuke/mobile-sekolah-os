@@ -54,6 +54,7 @@ Map<String, dynamic> _leaveDetail() => {
 class _Backend {
   List<Map<String, dynamic>> notes = [];
   int notificationCalls = 0;
+  final marked = <String>[];
   int? failWith;
 
   http.Response _ok(Object data, [Object meta = const {}]) => http.Response(
@@ -63,6 +64,11 @@ class _Backend {
   ApiClient get client => ApiClient(
         client: MockClient((req) async {
           final path = req.url.path;
+          final read = RegExp(r'/notifications/([^/]+)/read$').firstMatch(path);
+          if (read != null) {
+            marked.add(read.group(1)!);
+            return _ok(<String, dynamic>{});
+          }
           if (path.endsWith('/notifications')) {
             notificationCalls++;
             if (failWith != null) {
@@ -220,6 +226,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Detail pengajuan'), findsOneWidget);
       expect(find.text('Disetujui'), findsWidgets);
+      expect(backend.marked, ['new'], reason: 'opening it from the toast reads it');
     });
 
     testWidgets('a backgrounded app does not poll; coming back looks at once',
