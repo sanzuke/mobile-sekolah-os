@@ -62,37 +62,98 @@ class WeekInfo {
 
 class AgendaItem {
   const AgendaItem({
+    this.id = 0,
     required this.title,
+    this.description,
     required this.typeLabel,
+    this.startDate,
+    this.endDate,
     this.startTime,
+    this.endTime,
+    this.isAllDay = true,
     this.location,
   });
 
+  final int id;
   final String title;
+  final String? description;
   final String typeLabel;
+
+  /// `YYYY-MM-DD`; null in older payloads (`/home` before agenda endpoint).
+  final String? startDate;
+  final String? endDate;
   final String? startTime;
+  final String? endTime;
+  final bool isAllDay;
   final String? location;
 
   factory AgendaItem.fromJson(Map<String, dynamic> j) => AgendaItem(
+        id: j['id'] as int? ?? 0,
         title: j['title'] as String? ?? '',
+        description: j['description'] as String?,
         typeLabel: j['type_label'] as String? ?? '',
+        startDate: j['start_date'] as String?,
+        endDate: j['end_date'] as String?,
         startTime: j['start_time'] as String?,
+        endTime: j['end_time'] as String?,
+        isAllDay: j['is_all_day'] as bool? ?? true,
         location: j['location'] as String?,
       );
+
+  /// `08:00 – 10:30`, `08:00`, or null for all-day events.
+  String? get timeRange {
+    if (isAllDay || startTime == null) return null;
+    return endTime == null ? startTime : '$startTime – $endTime';
+  }
 }
 
 class Announcement {
-  const Announcement({required this.title, this.excerpt, this.publishedAt});
+  const Announcement({
+    this.id = 0,
+    required this.title,
+    this.excerpt,
+    this.category,
+    this.imageUrl,
+    this.publishedAt,
+  });
 
+  final int id;
   final String title;
   final String? excerpt;
+  final String? category;
+  final String? imageUrl;
   final DateTime? publishedAt;
 
   factory Announcement.fromJson(Map<String, dynamic> j) => Announcement(
+        id: j['id'] as int? ?? 0,
         title: j['title'] as String? ?? '',
         excerpt: j['excerpt'] as String?,
+        category: j['category'] as String?,
+        imageUrl: j['image_url'] as String?,
         publishedAt: DateTime.tryParse(j['published_at'] as String? ?? ''),
       );
+}
+
+class AnnouncementDetail {
+  const AnnouncementDetail({required this.summary, required this.text});
+
+  final Announcement summary;
+
+  /// Plain text of the post body (`content_text`); HTML is not rendered yet.
+  final String text;
+
+  factory AnnouncementDetail.fromJson(Map<String, dynamic> j) =>
+      AnnouncementDetail(
+        summary: Announcement.fromJson(j),
+        text: j['content_text'] as String? ?? '',
+      );
+}
+
+class AnnouncementPage {
+  const AnnouncementPage({required this.items, required this.lastPage});
+
+  final List<Announcement> items;
+  final int lastPage;
 }
 
 class HomeData {

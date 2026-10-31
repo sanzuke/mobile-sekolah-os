@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import '../services/teacher_service.dart';
 import '../state/session_controller.dart';
 import 'home_screen.dart';
+import 'inbox_screen.dart';
 import 'schedule_screen.dart';
 
 /// Bottom-nav shell from the design: Beranda, Jadwal, Kotak masuk, Akun.
-/// Beranda, Jadwal and Akun are live; Kotak masuk is a placeholder until its
-/// endpoints land. IndexedStack keeps each tab's loaded data when switching.
+/// Beranda, Jadwal, Kotak masuk (Pengumuman + Agenda) and Akun are live.
+/// IndexedStack keeps each tab's loaded data when switching.
 class AppShell extends StatefulWidget {
   const AppShell({super.key, required this.session, required this.service});
 
@@ -35,8 +36,10 @@ class _AppShellState extends State<AppShell> {
         service: widget.service,
         onUnauthorized: widget.session.logout,
       ),
-      const _Placeholder(
-          title: 'Kotak masuk', subtitle: 'Segera hadir', icon: Icons.inbox),
+      InboxScreen(
+        service: widget.service,
+        onUnauthorized: widget.session.logout,
+      ),
       _AccountPage(session: widget.session),
     ];
 
@@ -53,31 +56,6 @@ class _AppShellState extends State<AppShell> {
               icon: Icon(Icons.inbox_outlined), label: 'Kotak masuk'),
           NavigationDestination(
               icon: Icon(Icons.person_outline), label: 'Akun'),
-        ],
-      ),
-    );
-  }
-}
-
-class _Placeholder extends StatelessWidget {
-  const _Placeholder(
-      {required this.title, required this.subtitle, required this.icon});
-
-  final String title;
-  final String subtitle;
-  final IconData icon;
-
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 48, color: Theme.of(context).colorScheme.primary),
-          const SizedBox(height: 12),
-          Text(title, style: Theme.of(context).textTheme.titleMedium),
-          const SizedBox(height: 4),
-          Text(subtitle),
         ],
       ),
     );

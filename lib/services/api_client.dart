@@ -43,6 +43,16 @@ class ApiClient {
     return _unwrap(response);
   }
 
+  /// Like [get] but returns the whole `{data, meta}` envelope, for paginated
+  /// lists that need `meta.last_page`.
+  Future<Map<String, dynamic>> getEnvelope(String path,
+      {Map<String, String>? query}) async {
+    final response = await _client.get(_uri(path, query), headers: _headers);
+    final data = _unwrap(response);
+    final body = jsonDecode(response.body) as Map<String, dynamic>;
+    return {'data': data, 'meta': body['meta'] ?? const {}};
+  }
+
   Future<dynamic> post(String path, {Map<String, dynamic>? body}) async {
     final response = await _client.post(
       _uri(path),

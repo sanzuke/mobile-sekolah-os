@@ -73,4 +73,47 @@ void main() {
     expect(formatDate('2026-10-31'), '31 Okt 2026');
     expect(formatRange('2026-10-26', '2026-11-01'), '26 Okt – 1 Nov 2026');
   });
+
+  test('AgendaItem parses the /agenda payload and builds a time range', () {
+    final timed = AgendaItem.fromJson({
+      'id': 7,
+      'title': 'Rapat',
+      'description': null,
+      'type_label': 'Kegiatan Akademik',
+      'start_date': '2026-11-08',
+      'end_date': '2026-11-12',
+      'start_time': '08:00',
+      'end_time': '10:30',
+      'is_all_day': false,
+      'location': 'Aula',
+    });
+    expect(timed.timeRange, '08:00 – 10:30');
+    expect(timed.endDate, '2026-11-12');
+
+    final allDay = AgendaItem.fromJson({
+      'title': 'Ujian',
+      'type_label': 'Ujian',
+      'is_all_day': true,
+      'start_time': null,
+    });
+    expect(allDay.timeRange, isNull);
+    expect(allDay.id, 0);
+  });
+
+  test('Announcement and detail parse list and show payloads', () {
+    final detail = AnnouncementDetail.fromJson({
+      'id': 21,
+      'title': 'Du\'at Camp',
+      'excerpt': null,
+      'category': 'Kegiatan',
+      'image_url': null,
+      'published_at': '2026-09-27T23:09:32+00:00',
+      'content_html': '<p>Isi</p>',
+      'content_text': 'Isi',
+    });
+    expect(detail.summary.id, 21);
+    expect(detail.summary.category, 'Kegiatan');
+    expect(detail.summary.publishedAt, isNotNull);
+    expect(detail.text, 'Isi');
+  });
 }

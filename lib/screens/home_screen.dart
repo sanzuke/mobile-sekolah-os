@@ -6,6 +6,7 @@ import '../services/teacher_service.dart';
 import '../widgets/async_view.dart';
 import '../widgets/date_format.dart';
 import '../widgets/lesson_tile.dart';
+import 'announcement_detail_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
@@ -86,6 +87,15 @@ class HomeScreen extends StatelessWidget {
                       ? null
                       : Text(formatDate(
                           a.publishedAt!.toLocal().toIso8601String())),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => AnnouncementDetailScreen(
+                      id: a.id,
+                      title: a.title,
+                      service: service,
+                      onUnauthorized: onUnauthorized,
+                    ),
+                  )),
                 ),
           ],
         );
