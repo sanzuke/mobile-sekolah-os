@@ -215,17 +215,19 @@ class _LeaveCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Expanded(
-                        child: Text(item.typeLabel,
-                            style: text.titleSmall
-                                ?.copyWith(fontWeight: FontWeight.w800))),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: LeaveStatusChip(
+                  Wrap(
+                    alignment: WrapAlignment.spaceBetween,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 8,
+                    runSpacing: 4,
+                    children: [
+                      Text(item.typeLabel,
+                          style: text.titleSmall
+                              ?.copyWith(fontWeight: FontWeight.w800)),
+                      LeaveStatusChip(
                           status: item.status, label: item.statusLabel),
-                    ),
-                  ]),
+                    ],
+                  ),
                   const SizedBox(height: 2),
                   Text(leaveRange(item.startDate, item.endDate),
                       style: text.bodyMedium),

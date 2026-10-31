@@ -128,13 +128,18 @@ class _LeaveDetailScreenState extends State<LeaveDetailScreen> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                      child: Text(r.typeLabel,
-                          style: text.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w800))),
-                  const SizedBox(width: 8),
-                  Flexible(
-                    child:
+                    // Wraps instead of cutting "Menunggu persetujuan" short.
+                    child: Wrap(
+                      spacing: 8,
+                      runSpacing: 6,
+                      crossAxisAlignment: WrapCrossAlignment.center,
+                      children: [
+                        Text(r.typeLabel,
+                            style: text.titleMedium
+                                ?.copyWith(fontWeight: FontWeight.w800)),
                         LeaveStatusChip(status: r.status, label: r.statusLabel),
+                      ],
+                    ),
                   ),
                 ]),
                 const SizedBox(height: 12),
