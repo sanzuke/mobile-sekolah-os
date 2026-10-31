@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
 import '../models/teacher_models.dart';
@@ -18,12 +19,16 @@ class InboxScreen extends StatefulWidget {
     required this.service,
     required this.unread,
     required this.onUnauthorized,
+    this.notificationsRefresh,
     this.segmentRequest,
   });
 
   final TeacherService service;
   final ValueNotifier<int> unread;
   final VoidCallback onUnauthorized;
+
+  /// Bumped by the shell when its background check found new notifications.
+  final ValueListenable<int>? notificationsRefresh;
 
   /// Other screens (bell, menu tiles) ask for a segment by setting a value >= 0;
   /// it is consumed (reset to -1) so asking for the same segment again works.
@@ -87,7 +92,8 @@ class _InboxScreenState extends State<InboxScreen> {
               NotificationList(
                   service: widget.service,
                   unread: widget.unread,
-                  onUnauthorized: widget.onUnauthorized),
+                  onUnauthorized: widget.onUnauthorized,
+                  refreshSignal: widget.notificationsRefresh),
               const _ReportsEmpty(),
             ],
           ),

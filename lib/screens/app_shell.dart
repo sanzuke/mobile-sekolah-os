@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
+import '../models/teacher_models.dart';
 import '../services/teacher_service.dart';
 import '../services/update_service.dart';
+import '../state/notification_watcher.dart';
 import '../state/session_controller.dart';
 import 'account_screen.dart';
 import 'home_screen.dart';
 import 'inbox_screen.dart';
+import 'notification_target.dart';
 import 'quick_actions_sheet.dart';
 import 'schedule_screen.dart';
 import 'shell_actions.dart';
@@ -41,6 +44,58 @@ class _AppShellState extends State<AppShell> {
   /// Segment of Kotak masuk another screen wants open (-1 = none).
   final ValueNotifier<int> _inboxSegment = ValueNotifier<int>(-1);
 
+  /// Bumped when the background check finds new notifications, so an already
+  /// loaded Notifikasi list reloads.
+  final ValueNotifier<int> _notificationsVersion = ValueNotifier<int>(0);
+
+  late final NotificationWatcher _watcher = NotificationWatcher(
+    service: widget.service,
+    unread: _unread,
+    onUnauthorized: widget.session.logout,
+    onNew: _announce,
+  );
+
+  /// A decision (or any news) arrived while the app is open: say so, and offer to
+  /// open what it is about.
+  void _announce(List<NotificationItem> fresh) {
+    _notificationsVersion.value++;
+    if (!mounted) return;
+    final first = fresh.first;
+    final single = fresh.length == 1;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(
+        duration: const Duration(seconds: 8),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(single ? first.title : '${fresh.length} notifikasi baru',
+                style: const TextStyle(fontWeight: FontWeight.w800)),
+            if (single && first.body != null)
+              Text(first.body!, maxLines: 2, overflow: TextOverflow.ellipsis),
+          ],
+        ),
+        action: SnackBarAction(
+          label: 'Lihat',
+          onPressed: () {
+            if (single && hasNotificationTarget(first)) {
+              openNotificationTarget(
+                  context, widget.service, widget.session.logout, first);
+            } else {
+              _actions.openInboxSegment(kInboxNotifications);
+            }
+          },
+        ),
+      ));
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _watcher.start();
+  }
+
   late final ShellActions _actions = ShellActions(
     service: widget.service,
     unread: _unread,
@@ -55,6 +110,8 @@ class _AppShellState extends State<AppShell> {
 
   @override
   void dispose() {
+    _watcher.stop();
+    _notificationsVersion.dispose();
     _unread.dispose();
     _academicYear.dispose();
     _inboxSegment.dispose();
@@ -74,6 +131,7 @@ class _AppShellState extends State<AppShell> {
         unread: _unread,
         onUnauthorized: widget.session.logout,
         segmentRequest: _inboxSegment,
+        notificationsRefresh: _notificationsVersion,
       ),
       AccountScreen(
         teacher: widget.session.teacher!,

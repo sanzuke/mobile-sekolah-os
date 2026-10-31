@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
 import '../models/teacher_models.dart';
@@ -5,6 +6,7 @@ import '../services/api_client.dart';
 import '../services/teacher_service.dart';
 import '../widgets/date_format.dart';
 import '../widgets/surface_cards.dart';
+import 'notification_target.dart';
 
 /// Paginated notification cards. Tapping an unread one marks it read
 /// (optimistically); [unread] drives the badges in the nav bar and on Beranda.
@@ -14,11 +16,15 @@ class NotificationList extends StatefulWidget {
     required this.service,
     required this.unread,
     required this.onUnauthorized,
+    this.refreshSignal,
   });
 
   final TeacherService service;
   final ValueNotifier<int> unread;
   final VoidCallback onUnauthorized;
+
+  /// Bumped by the shell when its background check found new notifications.
+  final ValueListenable<int>? refreshSignal;
 
   @override
   State<NotificationList> createState() => _NotificationListState();
@@ -35,6 +41,17 @@ class _NotificationListState extends State<NotificationList> {
   void initState() {
     super.initState();
     _loadMore();
+    widget.refreshSignal?.addListener(_onSignal);
+  }
+
+  @override
+  void dispose() {
+    widget.refreshSignal?.removeListener(_onSignal);
+    super.dispose();
+  }
+
+  void _onSignal() {
+    if (mounted && !_loading) _refresh();
   }
 
   Future<void> _refresh() async {
@@ -67,6 +84,10 @@ class _NotificationListState extends State<NotificationList> {
 
   Future<void> _open(int index) async {
     final item = _items[index];
+    if (hasNotificationTarget(item)) {
+      openNotificationTarget(
+          context, widget.service, widget.onUnauthorized, item);
+    }
     if (item.isRead) return;
     setState(() => _items[index] = item.asRead());
     widget.unread.value = (widget.unread.value - 1).clamp(0, 1 << 30);
@@ -223,6 +244,11 @@ class _NotificationCard extends StatelessWidget {
                 padding: EdgeInsets.only(left: 8, top: 4),
                 child: CircleAvatar(
                     radius: 5, backgroundColor: Color(0xFFDC2626)),
+              ),
+            if (hasNotificationTarget(item))
+              const Padding(
+                padding: EdgeInsets.only(left: 4, top: 8),
+                child: Icon(Icons.chevron_right, color: Color(0xFF64748B)),
               ),
           ],
         ),

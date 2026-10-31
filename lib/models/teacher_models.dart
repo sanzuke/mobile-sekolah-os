@@ -161,6 +161,18 @@ class AnnouncementPage {
   final int lastPage;
 }
 
+/// What tapping a notification should open (`target` of `/notifications`).
+class NotificationTarget {
+  const NotificationTarget({required this.type, this.id});
+
+  /// `leave_request` (more types later).
+  final String type;
+  final int? id;
+
+  factory NotificationTarget.fromJson(Map<String, dynamic> j) =>
+      NotificationTarget(type: j['type'] as String? ?? '', id: j['id'] as int?);
+}
+
 class NotificationItem {
   const NotificationItem({
     required this.id,
@@ -168,6 +180,7 @@ class NotificationItem {
     this.body,
     required this.isRead,
     this.createdAt,
+    this.target,
   });
 
   final String id;
@@ -175,6 +188,7 @@ class NotificationItem {
   final String? body;
   final bool isRead;
   final DateTime? createdAt;
+  final NotificationTarget? target;
 
   factory NotificationItem.fromJson(Map<String, dynamic> j) => NotificationItem(
         id: j['id'] as String? ?? '',
@@ -182,6 +196,9 @@ class NotificationItem {
         body: j['body'] as String?,
         isRead: j['is_read'] as bool? ?? false,
         createdAt: DateTime.tryParse(j['created_at'] as String? ?? ''),
+        target: j['target'] is Map<String, dynamic>
+            ? NotificationTarget.fromJson(j['target'] as Map<String, dynamic>)
+            : null,
       );
 
   NotificationItem asRead() => NotificationItem(
@@ -190,6 +207,7 @@ class NotificationItem {
         body: body,
         isRead: true,
         createdAt: createdAt,
+        target: target,
       );
 }
 
