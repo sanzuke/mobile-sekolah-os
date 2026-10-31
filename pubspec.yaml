@@ -39,6 +39,11 @@ dependencies:
   http: ^1.2.2
   flutter_secure_storage: ^9.2.2
 
+  # In-house updates (Play Store stand-in): installed version, APK download, installer.
+  package_info_plus: ^8.1.2
+  path_provider: ^2.1.5
+  open_filex: ^4.5.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

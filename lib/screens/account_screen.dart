@@ -2,8 +2,10 @@ import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../services/update_service.dart';
 import '../widgets/date_format.dart';
 import '../widgets/surface_cards.dart';
+import 'changelog_screen.dart';
 
 /// "Akun" as in the design: profile card, a list of settings rows, and Keluar.
 /// The settings rows have no backend yet and say so; Keluar asks first.
@@ -13,6 +15,7 @@ class AccountScreen extends StatelessWidget {
     required this.teacher,
     required this.academicYear,
     required this.onLogout,
+    required this.updater,
     this.now,
   });
 
@@ -21,6 +24,9 @@ class AccountScreen extends StatelessWidget {
   /// Academic year of the active semester, once Beranda has loaded it.
   final ValueListenable<String?> academicYear;
   final Future<void> Function() onLogout;
+
+  /// Checks for and installs newer SekolahOS Guru releases (Log perubahan).
+  final AppUpdater updater;
 
   /// Injectable clock for tests; defaults to the device clock.
   final DateTime? now;
@@ -134,7 +140,8 @@ class AccountScreen extends StatelessWidget {
                 icon: Icons.history,
                 label: 'Log perubahan',
                 sub: 'Versi aplikasi & pembaruan',
-                onTap: () => _soon(context, 'Log perubahan'),
+                onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => ChangelogScreen(updater: updater))),
               ),
             ],
           ),

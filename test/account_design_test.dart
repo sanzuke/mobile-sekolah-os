@@ -4,6 +4,8 @@ import 'package:mobile_sekolah_os/screens/account_screen.dart';
 import 'package:mobile_sekolah_os/services/auth_service.dart';
 import 'package:mobile_sekolah_os/theme/app_theme.dart';
 
+import 'support/fake_updater.dart';
+
 AuthenticatedTeacher _t(String name, {String? nip, bool homeroom = false}) =>
     AuthenticatedTeacher(id: 1, name: name, nip: nip, isHomeroom: homeroom);
 
@@ -42,6 +44,7 @@ void main() {
           teacher: teacher ?? _t('Farhahd S.Si., M.Pd.', nip: 'T14052'),
           academicYear: ValueNotifier<String?>(year),
           onLogout: onLogout ?? () async => log.add('logout'),
+          updater: FakeUpdater(),
           now: DateTime(2026, 10, 31),
         ),
       ),
@@ -109,5 +112,15 @@ void main() {
     await tester.tap(find.widgetWithText(FilledButton, 'Keluar'));
     await tester.pumpAndSettle();
     expect(log, ['logout']);
+  });
+
+  testWidgets('Log perubahan opens the version screen', (tester) async {
+    await pump(tester);
+
+    await tester.tap(find.text('Log perubahan'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('SekolahOS Guru'), findsOneWidget);
+    expect(find.text('Versi 1.0.0 (build 1)'), findsOneWidget);
   });
 }

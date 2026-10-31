@@ -13,6 +13,8 @@ import 'package:mobile_sekolah_os/services/teacher_service.dart';
 import 'package:mobile_sekolah_os/state/session_controller.dart';
 import 'package:mobile_sekolah_os/theme/app_theme.dart';
 
+import 'support/fake_updater.dart';
+
 Map<String, dynamic> _home({
   Map<String, dynamic>? next,
   int unread = 0,
@@ -71,7 +73,11 @@ Future<ApiClient> _pumpShell(WidgetTester tester, Map<String, dynamic> home) asy
 
   await tester.pumpWidget(MaterialApp(
     theme: buildTheme(),
-    home: AppShell(session: session, service: TeacherService(client)),
+    home: AppShell(
+      session: session,
+      service: TeacherService(client),
+      updater: FakeUpdater(),
+    ),
   ));
   await tester.pumpAndSettle();
   return client;

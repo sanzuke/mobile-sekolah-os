@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/teacher_service.dart';
+import '../services/update_service.dart';
 import '../state/session_controller.dart';
 import 'account_screen.dart';
 import 'home_screen.dart';
@@ -13,10 +14,16 @@ import 'shell_actions.dart';
 /// Nilai/Akademik is not a tab; it is a menu under Semua menu.
 /// IndexedStack keeps each tab's loaded data when switching.
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.session, required this.service});
+  const AppShell({
+    super.key,
+    required this.session,
+    required this.service,
+    required this.updater,
+  });
 
   final SessionController session;
   final TeacherService service;
+  final AppUpdater updater;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -72,6 +79,7 @@ class _AppShellState extends State<AppShell> {
         teacher: widget.session.teacher!,
         academicYear: _academicYear,
         onLogout: widget.session.logout,
+        updater: widget.updater,
       ),
     ];
 
