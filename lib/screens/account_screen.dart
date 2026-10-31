@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
 import '../services/update_service.dart';
+import '../state/session_controller.dart';
 import '../widgets/date_format.dart';
 import '../widgets/surface_cards.dart';
 import 'changelog_screen.dart';
@@ -16,8 +17,13 @@ class AccountScreen extends StatelessWidget {
     required this.academicYear,
     required this.onLogout,
     required this.updater,
+    this.session,
     this.now,
   });
+
+  /// Source of the "Login biometrik" setting; the row is hidden when null or when
+  /// the device has no biometrics enrolled.
+  final SessionController? session;
 
   final AuthenticatedTeacher teacher;
 
@@ -37,6 +43,27 @@ class AccountScreen extends StatelessWidget {
     ScaffoldMessenger.of(context)
       ..hideCurrentSnackBar()
       ..showSnackBar(SnackBar(content: Text('$label akan segera hadir')));
+  }
+
+  Future<void> _toggleBiometric(BuildContext context, bool on) async {
+    final session = this.session!;
+    final messenger = ScaffoldMessenger.of(context);
+    void say(String text) => messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(SnackBar(content: Text(text)));
+
+    if (!on) {
+      await session.disableBiometric();
+      say('Login biometrik dimatikan');
+      return;
+    }
+    final password = await showDialog<String>(
+      context: context,
+      builder: (_) => const _PasswordDialog(),
+    );
+    if (password == null || password.isEmpty) return;
+    final error = await session.enableBiometric(password);
+    say(error ?? 'Login biometrik diaktifkan');
   }
 
   Future<void> _confirmLogout(BuildContext context) async {
@@ -136,6 +163,29 @@ class AccountScreen extends StatelessWidget {
                 onTap: () => _soon(context, 'Ganti mode workspace'),
               ),
               const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              if (session != null)
+                ListenableBuilder(
+                  listenable: session!,
+                  builder: (context, _) {
+                    if (!session!.biometricAvailable) {
+                      return const SizedBox.shrink();
+                    }
+                    return Column(children: [
+                      _Row(
+                        icon: Icons.fingerprint,
+                        label: 'Login biometrik',
+                        sub: 'Masuk dengan sidik jari atau wajah',
+                        trailing: Switch(
+                          value: session!.biometricEnabled,
+                          onChanged: (v) => _toggleBiometric(context, v),
+                        ),
+                        onTap: () => _toggleBiometric(
+                            context, !session!.biometricEnabled),
+                      ),
+                      const Divider(height: 1, color: Color(0xFFE2E8F0)),
+                    ]);
+                  },
+                ),
               _Row(
                 icon: Icons.history,
                 label: 'Log perubahan',
@@ -195,8 +245,10 @@ class _Row extends StatelessWidget {
     required this.sub,
     required this.onTap,
     this.danger = false,
+    this.trailing,
   });
 
+  final Widget? trailing;
   final IconData icon;
   final String label;
   final String sub;
@@ -235,11 +287,64 @@ class _Row extends StatelessWidget {
                 ],
               ),
             ),
-            if (!danger)
+            if (trailing != null)
+              trailing!
+            else if (!danger)
               const Icon(Icons.chevron_right, color: Color(0xFF64748B)),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Asks for the password once; it is checked against the server before the
+/// biometric login is switched on.
+class _PasswordDialog extends StatefulWidget {
+  const _PasswordDialog();
+
+  @override
+  State<_PasswordDialog> createState() => _PasswordDialogState();
+}
+
+class _PasswordDialogState extends State<_PasswordDialog> {
+  final _controller = TextEditingController();
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Aktifkan login biometrik'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+              'Masukkan kata sandi akun Anda. Kata sandi disimpan terenkripsi di perangkat ini dan hanya dipakai setelah biometrik berhasil.'),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _controller,
+            obscureText: true,
+            autofocus: true,
+            onSubmitted: (v) => Navigator.pop(context, v),
+            decoration: const InputDecoration(
+                labelText: 'Kata sandi', border: OutlineInputBorder()),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal')),
+        FilledButton(
+            onPressed: () => Navigator.pop(context, _controller.text),
+            child: const Text('Lanjut')),
+      ],
     );
   }
 }

@@ -37,7 +37,7 @@ class SekolahOsApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'SekolahOS',
+      title: 'Asatidz PPI 50',
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
       home: ListenableBuilder(

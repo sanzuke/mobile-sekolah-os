@@ -47,7 +47,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     children: [
                       const Icon(Icons.school, size: 56, color: kAccent),
                       const SizedBox(height: 16),
-                      Text('SekolahOS',
+                      Text('Asatidz PPI 50',
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.headlineMedium),
                       const SizedBox(height: 4),
@@ -101,6 +101,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                     CircularProgressIndicator(strokeWidth: 2))
                             : const Text('Masuk'),
                       ),
+                      if (s.biometricEnabled) ...[
+                        const SizedBox(height: 12),
+                        OutlinedButton.icon(
+                          onPressed:
+                              s.busy ? null : widget.session.loginWithBiometric,
+                          icon: const Icon(Icons.fingerprint),
+                          label: const Text('Masuk dengan biometrik'),
+                        ),
+                      ],
                     ],
                   );
                 },

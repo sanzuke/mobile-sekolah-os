@@ -80,6 +80,7 @@ class _AppShellState extends State<AppShell> {
         academicYear: _academicYear,
         onLogout: widget.session.logout,
         updater: widget.updater,
+        session: widget.session,
       ),
     ];
 

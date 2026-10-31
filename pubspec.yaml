@@ -43,6 +43,8 @@ dependencies:
   package_info_plus: ^8.1.2
   path_provider: ^2.1.5
   open_filex: ^4.5.0
+  local_auth: ^3.0.2
+  local_auth_android: ^2.3.0
 
 dev_dependencies:
   flutter_test:

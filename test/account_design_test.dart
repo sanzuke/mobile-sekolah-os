@@ -120,7 +120,7 @@ void main() {
     await tester.tap(find.text('Log perubahan'));
     await tester.pumpAndSettle();
 
-    expect(find.text('SekolahOS Guru'), findsOneWidget);
+    expect(find.text('Asatidz PPI 50'), findsOneWidget);
     expect(find.text('Versi 1.0.0 (build 1)'), findsOneWidget);
   });
 }

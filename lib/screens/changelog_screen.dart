@@ -227,7 +227,7 @@ class _VersionCard extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('SekolahOS Guru',
+                  const Text('Asatidz PPI 50',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w800)),
                   Text(
                     installed == null

@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "id.sch.persis50.mobile_sekolah_os"
+    namespace = "id.sch.persis50lembang.asatidz"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "id.sch.persis50.mobile_sekolah_os"
+        applicationId = "id.sch.persis50lembang.asatidz"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion
@@ -46,4 +46,9 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // local_auth's biometric prompt needs an AppCompat launch theme (see styles.xml).
+    implementation("androidx.appcompat:appcompat:1.7.0")
 }

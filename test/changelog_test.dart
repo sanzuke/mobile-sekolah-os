@@ -42,7 +42,7 @@ void main() {
     );
     await _pump(tester, updater);
 
-    expect(find.text('SekolahOS Guru'), findsOneWidget);
+    expect(find.text('Asatidz PPI 50'), findsOneWidget);
     expect(find.text('Versi 1.2.0 (build 3)'), findsOneWidget);
     expect(find.text('Aplikasi sudah versi terbaru'), findsOneWidget);
     expect(find.text('Unduh & pasang'), findsNothing);
