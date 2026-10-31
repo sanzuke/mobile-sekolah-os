@@ -13,19 +13,26 @@ class HomeScreen extends StatelessWidget {
     super.key,
     required this.teacher,
     required this.service,
+    required this.unread,
     required this.onUnauthorized,
     required this.onOpenSchedule,
   });
 
   final AuthenticatedTeacher teacher;
   final TeacherService service;
+  final ValueNotifier<int> unread;
   final VoidCallback onUnauthorized;
   final VoidCallback onOpenSchedule;
 
   @override
   Widget build(BuildContext context) {
     return AsyncView<HomeData>(
-      load: service.home,
+      load: () async {
+        final data = await service.home();
+        // Keeps the nav badge in step with every Beranda refresh.
+        unread.value = data.unreadNotifications;
+        return data;
+      },
       onUnauthorized: onUnauthorized,
       builder: (context, data) {
         final text = Theme.of(context).textTheme;

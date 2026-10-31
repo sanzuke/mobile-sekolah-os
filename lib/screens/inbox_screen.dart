@@ -6,17 +6,20 @@ import '../services/teacher_service.dart';
 import '../widgets/async_view.dart';
 import '../widgets/date_format.dart';
 import 'announcement_detail_screen.dart';
+import 'notification_list.dart';
 
-/// "Kotak masuk" tab: Pengumuman and Agenda. Notifications and laporan from
-/// the design land here when their endpoints exist.
+/// "Kotak masuk" tab: Pengumuman, Agenda and Notifikasi. Laporan from the
+/// design lands here when its endpoint exists.
 class InboxScreen extends StatefulWidget {
   const InboxScreen({
     super.key,
     required this.service,
+    required this.unread,
     required this.onUnauthorized,
   });
 
   final TeacherService service;
+  final ValueNotifier<int> unread;
   final VoidCallback onUnauthorized;
 
   @override
@@ -33,9 +36,23 @@ class _InboxScreenState extends State<InboxScreen> {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
           child: SegmentedButton<int>(
-            segments: const [
-              ButtonSegment(value: 0, label: Text('Pengumuman')),
-              ButtonSegment(value: 1, label: Text('Agenda')),
+            segments: [
+              const ButtonSegment(value: 0, label: Text('Pengumuman')),
+              const ButtonSegment(value: 1, label: Text('Agenda')),
+              ButtonSegment(
+                value: 2,
+                label: ValueListenableBuilder<int>(
+                  valueListenable: widget.unread,
+                  builder: (_, count, _) => Badge(
+                    isLabelVisible: count > 0,
+                    label: Text('$count'),
+                    child: const Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: Text('Notifikasi'),
+                    ),
+                  ),
+                ),
+              ),
             ],
             selected: {_segment},
             onSelectionChanged: (s) => setState(() => _segment = s.first),
@@ -50,6 +67,10 @@ class _InboxScreenState extends State<InboxScreen> {
                   onUnauthorized: widget.onUnauthorized),
               AgendaList(
                   service: widget.service,
+                  onUnauthorized: widget.onUnauthorized),
+              NotificationList(
+                  service: widget.service,
+                  unread: widget.unread,
                   onUnauthorized: widget.onUnauthorized),
             ],
           ),

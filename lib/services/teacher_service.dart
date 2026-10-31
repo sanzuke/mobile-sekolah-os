@@ -42,4 +42,25 @@ class TeacherService {
       AnnouncementDetail.fromJson(
           await _client.get('/v1/teacher/announcements/$id')
               as Map<String, dynamic>);
+
+  Future<NotificationPage> notifications({int page = 1}) async {
+    final res = await _client.getEnvelope('/v1/teacher/notifications',
+        query: {'page': '$page', 'per_page': '20'});
+    final meta = res['meta'] as Map<String, dynamic>;
+    return NotificationPage(
+      items: (res['data'] as List<dynamic>)
+          .map((e) => NotificationItem.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      lastPage: meta['last_page'] as int? ?? 1,
+      unreadCount: meta['unread_count'] as int? ?? 0,
+    );
+  }
+
+  Future<void> markNotificationRead(String id) async {
+    await _client.post('/v1/teacher/notifications/$id/read');
+  }
+
+  Future<void> markAllNotificationsRead() async {
+    await _client.post('/v1/teacher/notifications/read-all');
+  }
 }

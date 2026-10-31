@@ -156,6 +156,50 @@ class AnnouncementPage {
   final int lastPage;
 }
 
+class NotificationItem {
+  const NotificationItem({
+    required this.id,
+    required this.title,
+    this.body,
+    required this.isRead,
+    this.createdAt,
+  });
+
+  final String id;
+  final String title;
+  final String? body;
+  final bool isRead;
+  final DateTime? createdAt;
+
+  factory NotificationItem.fromJson(Map<String, dynamic> j) => NotificationItem(
+        id: j['id'] as String? ?? '',
+        title: j['title'] as String? ?? '',
+        body: j['body'] as String?,
+        isRead: j['is_read'] as bool? ?? false,
+        createdAt: DateTime.tryParse(j['created_at'] as String? ?? ''),
+      );
+
+  NotificationItem asRead() => NotificationItem(
+        id: id,
+        title: title,
+        body: body,
+        isRead: true,
+        createdAt: createdAt,
+      );
+}
+
+class NotificationPage {
+  const NotificationPage({
+    required this.items,
+    required this.lastPage,
+    required this.unreadCount,
+  });
+
+  final List<NotificationItem> items;
+  final int lastPage;
+  final int unreadCount;
+}
+
 class HomeData {
   const HomeData({
     required this.date,
@@ -168,8 +212,10 @@ class HomeData {
     this.nextLesson,
     required this.agenda,
     required this.announcements,
+    this.unreadNotifications = 0,
   });
 
+  final int unreadNotifications;
   final String date;
   final String? dayName;
   final String? semesterName;
@@ -201,6 +247,7 @@ class HomeData {
       nextLesson: next == null ? null : Lesson.fromJson(next),
       agenda: _list(j['agenda'], AgendaItem.fromJson),
       announcements: _list(j['announcements'], Announcement.fromJson),
+      unreadNotifications: j['unread_notifications'] as int? ?? 0,
     );
   }
 }

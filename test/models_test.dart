@@ -116,4 +116,29 @@ void main() {
     expect(detail.summary.publishedAt, isNotNull);
     expect(detail.text, 'Isi');
   });
+
+  test('NotificationItem parses and marks read without mutating', () {
+    final n = NotificationItem.fromJson({
+      'id': '3f1c9a52-0000-0000-0000-000000000000',
+      'title': 'Izin disetujui',
+      'body': 'Izin 3 Nov disetujui.',
+      'is_read': false,
+      'created_at': '2026-10-31T09:00:00+00:00',
+    });
+    expect(n.isRead, isFalse);
+    expect(n.asRead().isRead, isTrue);
+    expect(n.isRead, isFalse);
+    expect(n.createdAt, isNotNull);
+  });
+
+  test('HomeData carries unread_notifications, defaulting to 0', () {
+    final base = {
+      'date': '2026-10-31',
+      'today': {'state': 'none', 'draft_count': 0, 'lessons': []},
+      'agenda': [],
+      'announcements': [],
+    };
+    expect(HomeData.fromJson(base).unreadNotifications, 0);
+    expect(HomeData.fromJson({...base, 'unread_notifications': 4}).unreadNotifications, 4);
+  });
 }

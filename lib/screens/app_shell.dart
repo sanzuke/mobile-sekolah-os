@@ -7,7 +7,7 @@ import 'inbox_screen.dart';
 import 'schedule_screen.dart';
 
 /// Bottom-nav shell from the design: Beranda, Jadwal, Kotak masuk, Akun.
-/// Beranda, Jadwal, Kotak masuk (Pengumuman + Agenda) and Akun are live.
+/// Beranda, Jadwal, Kotak masuk (Pengumuman, Agenda, Notifikasi) and Akun are live.
 /// IndexedStack keeps each tab's loaded data when switching.
 class AppShell extends StatefulWidget {
   const AppShell({super.key, required this.session, required this.service});
@@ -22,6 +22,15 @@ class AppShell extends StatefulWidget {
 class _AppShellState extends State<AppShell> {
   int _index = 0;
 
+  /// Unread notification count, shared by the nav badge, Beranda and Kotak masuk.
+  final ValueNotifier<int> _unread = ValueNotifier<int>(0);
+
+  @override
+  void dispose() {
+    _unread.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     final teacher = widget.session.teacher!;
@@ -29,6 +38,7 @@ class _AppShellState extends State<AppShell> {
       HomeScreen(
         teacher: teacher,
         service: widget.service,
+        unread: _unread,
         onUnauthorized: widget.session.logout,
         onOpenSchedule: () => setState(() => _index = 1),
       ),
@@ -38,6 +48,7 @@ class _AppShellState extends State<AppShell> {
       ),
       InboxScreen(
         service: widget.service,
+        unread: _unread,
         onUnauthorized: widget.session.logout,
       ),
       _AccountPage(session: widget.session),
@@ -48,12 +59,20 @@ class _AppShellState extends State<AppShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
+        destinations: [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Beranda'),
           NavigationDestination(
               icon: Icon(Icons.schedule_outlined), label: 'Jadwal'),
           NavigationDestination(
-              icon: Icon(Icons.inbox_outlined), label: 'Kotak masuk'),
+              icon: ValueListenableBuilder<int>(
+                valueListenable: _unread,
+                builder: (_, count, _) => Badge(
+                  isLabelVisible: count > 0,
+                  label: Text('$count'),
+                  child: const Icon(Icons.inbox_outlined),
+                ),
+              ),
+              label: 'Kotak masuk'),
           NavigationDestination(
               icon: Icon(Icons.person_outline), label: 'Akun'),
         ],
