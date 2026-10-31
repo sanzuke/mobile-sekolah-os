@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import '../screens/menu_entries.dart';
 
 /// Four-column grid of [MenuTile]s with rows sized to the tile (a fixed 0.78
-/// aspect ratio left a ~40dp hole between rows).
+/// aspect ratio left a ~40dp hole between rows). The row height follows the
+/// user's text size: a two-line label at 1.2x needs more than a fixed 108dp.
 class MenuGrid extends StatelessWidget {
   const MenuGrid({super.key, required this.children});
 
@@ -11,12 +12,14 @@ class MenuGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Tile = padding 8 + icon 60 + gap 6, then up to two label lines (12sp, ~1.45).
+    final label = MediaQuery.textScalerOf(context).scale(12) * 1.45;
     return GridView(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 4,
-        mainAxisExtent: 108,
+        mainAxisExtent: 76 + 2 * label,
         mainAxisSpacing: 2,
       ),
       children: children,
