@@ -226,8 +226,14 @@ class _LessonAttendanceScreenState extends State<LessonAttendanceScreen> {
       },
       child: Scaffold(
         appBar: AppBar(title: Text('${b.subject} · ${b.className}')),
-        body: _body(),
-        bottomNavigationBar: _loading || _error != null ? null : _footer(),
+        body: Column(
+          children: [
+            Expanded(child: _body()),
+            // Kept on screen during the reload that follows a save (disabled), so it
+            // does not flash away; hidden only on the first load or when loading failed.
+            if (_error == null && _students.isNotEmpty) _footer(),
+          ],
+        ),
       ),
     );
   }
@@ -376,7 +382,7 @@ class _LessonAttendanceScreenState extends State<LessonAttendanceScreen> {
         child: SizedBox(
           width: double.infinity,
           child: FilledButton(
-            onPressed: _canSave && !_saving ? _save : null,
+            onPressed: _canSave && !_saving && !_loading ? _save : null,
             child: _saving
                 ? const SizedBox(
                     height: 20,

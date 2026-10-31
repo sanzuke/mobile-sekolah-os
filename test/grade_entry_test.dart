@@ -85,4 +85,35 @@ void main() {
       {'student_id': 2, 'grade_value': 65.5}, // Ali (unchanged) is not sent
     ]);
   });
+
+  testWidgets('Simpan rides above the keyboard instead of hiding behind it',
+      (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400); // 360 x 800 dp
+    tester.view.devicePixelRatio = 3.0;
+    // An on-screen keyboard 450dp tall (1350px) covers the lower half of the screen.
+    tester.view.viewInsets = const FakeViewPadding(bottom: 1350);
+    addTearDown(tester.view.reset);
+
+    final client = ApiClient(
+      client: MockClient((req) async => _json([
+            {'student_id': 1, 'nis': '001', 'name': 'Ali', 'grade_value': null},
+          ], meta: {'kkm': 70})),
+    );
+    await tester.pumpWidget(MaterialApp(
+      home: GradeEntryScreen(
+        service: TeacherService(client),
+        onUnauthorized: () {},
+        classInfo: const ClassInfo(
+            id: 9, name: '8A', isHomeroom: false, studentCount: 1, subjects: []),
+        subject: const SubjectInfo(id: 4, name: 'Fiqih', path: 'Fiqih', kkm: 70),
+        periods: const [ExamPeriodInfo(id: 5, name: 'NH 1')],
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    final keyboardTopDp = (2400 - 1350) / 3.0;
+    final saveBottom = tester.getBottomLeft(find.byType(FilledButton)).dy;
+    expect(saveBottom, lessThanOrEqualTo(keyboardTopDp),
+        reason: 'Simpan ($saveBottom dp) would sit under the keyboard (top at $keyboardTopDp dp)');
+  });
 }

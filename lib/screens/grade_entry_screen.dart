@@ -177,13 +177,15 @@ class _GradeEntryScreenState extends State<GradeEntryScreen> {
         appBar: AppBar(
           title: Text('${widget.subject.name} · ${widget.classInfo.name}'),
         ),
+        // The footer lives in the body, not in bottomNavigationBar: the Scaffold shrinks
+        // its body for the keyboard, so Simpan stays visible while the teacher types.
         body: Column(
           children: [
             _periodPicker(),
             Expanded(child: _body()),
+            if (_sheet != null) _footer(),
           ],
         ),
-        bottomNavigationBar: _sheet == null ? null : _footer(),
       ),
     );
   }

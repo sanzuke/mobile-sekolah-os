@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -98,8 +99,11 @@ void main() {
     ));
     await tester.pumpAndSettle();
 
-    expect(find.text('JP 1–2 · Fiqih'), findsOneWidget);
+    // JP, subject and status are separate elements, so a long subject is never squeezed.
+    expect(find.text('JP 1–2'), findsOneWidget);
+    expect(find.text('Fiqih'), findsOneWidget);
     expect(find.text('Belum presensi'), findsOneWidget);
+    expect(find.text('8A · 01:00 – 02:35'), findsOneWidget);
     // Today is the newest allowed day: no "next day".
     expect(
         tester.widget<IconButton>(find.widgetWithIcon(IconButton, Icons.chevron_right)).onPressed,
@@ -162,6 +166,54 @@ void main() {
         {'student_id': 2, 'status': 'sick'},
       ]);
     }
+  });
+
+  testWidgets('Simpan stays on screen (disabled) while the screen reloads after saving',
+      (tester) async {
+    final reload = Completer<void>();
+    var saved = false;
+    final client = ApiClient(
+      client: MockClient((req) async {
+        if (req.method == 'PUT') {
+          saved = true;
+          return _json({'saved': 2});
+        }
+        // The GETs that follow a save are held until the test lets them go.
+        if (saved) await reload.future;
+        return _json({
+          'lesson': {},
+          'session': {'state': saved ? 'submitted' : 'pending', 'editable': true},
+          'warnings': <String>[],
+          'students': [
+            {'student_id': 1, 'nis': '001', 'name': 'Ali', 'status': saved ? 'present' : null, 'note': null},
+          ],
+        });
+      }),
+    );
+    final block = buildLessonBlocks([
+      LessonItem.fromJson(_lesson(1, 'Fiqih', [_cls(10, 1, '8A')])),
+    ]).single;
+
+    await tester.pumpWidget(MaterialApp(
+      home: LessonAttendanceScreen(
+        service: TeacherService(client),
+        onUnauthorized: () {},
+        block: block,
+        date: '2026-10-31',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Simpan presensi JP 1'));
+    await tester.pump(); // the PUT completed; the reload is now waiting
+
+    final button = find.byType(FilledButton);
+    expect(button, findsOneWidget, reason: 'the footer must not vanish during the reload');
+    expect(tester.widget<FilledButton>(button).onPressed, isNull);
+
+    reload.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('Tersimpan'), findsOneWidget);
   });
 
   testWidgets('a locked lesson is read-only and cannot be saved', (tester) async {

@@ -4,6 +4,7 @@ import '../models/teacher_models.dart';
 import '../services/teacher_service.dart';
 import '../widgets/async_view.dart';
 import '../widgets/date_format.dart';
+import '../widgets/surface_cards.dart';
 import 'lesson_attendance_screen.dart';
 
 String isoDate(DateTime d) =>
@@ -146,24 +147,59 @@ class _BlockTile extends StatelessWidget {
       'partial' => ('Sebagian JP', const Color(0xFFB45309)),
       _ => ('Belum presensi', const Color(0xFFB45309)),
     };
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(color: scheme.outlineVariant),
-      ),
-      child: ListTile(
-        onTap: onTap,
-        title: Text('${block.jpLabel} · ${block.subject}',
-            style: const TextStyle(fontWeight: FontWeight.w600)),
-        subtitle: Text('${block.className} · ${block.start} – ${block.end}'),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
+    return Surface(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(14, 12, 8, 12),
+        child: Row(
           children: [
-            Text(label,
-                style: TextStyle(
-                    color: color, fontSize: 12, fontWeight: FontWeight.w600)),
-            const Icon(Icons.chevron_right),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: scheme.primary.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(block.jpLabel,
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: scheme.primary)),
+                      ),
+                      const SizedBox(width: 8),
+                      // Status gets its own chip so it never squeezes the subject.
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: color.withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(label,
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: color)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(block.subject,
+                      style: const TextStyle(
+                          fontSize: 16, fontWeight: FontWeight.w800)),
+                  const SizedBox(height: 2),
+                  Text('${block.className} · ${block.start} – ${block.end}',
+                      style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ),
+            ),
+            const Icon(Icons.chevron_right, color: Color(0xFF64748B)),
           ],
         ),
       ),
