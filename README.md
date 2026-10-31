@@ -18,7 +18,7 @@ Tanpa `API_BASE_URL`, default `http://10.0.2.2:8000/api` (emulator Android → `
 ## Status
 
 Fase 1: login/logout/restore sesi dan kerangka navigasi (Beranda, Jadwal, Kotak masuk, Akun).
-Layar Beranda/Jadwal/Kotak masuk masih placeholder menunggu endpoint backend.
+Beranda dan Jadwal sudah terhubung ke `/home` dan `/schedule`; Kotak masuk masih placeholder.
 
 ## Cek
 

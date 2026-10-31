@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 
+import '../services/teacher_service.dart';
 import '../state/session_controller.dart';
+import 'home_screen.dart';
+import 'schedule_screen.dart';
 
 /// Bottom-nav shell from the design: Beranda, Jadwal, Kotak masuk, Akun.
-/// Tab bodies other than Akun are placeholders until their endpoints land.
+/// Beranda, Jadwal and Akun are live; Kotak masuk is a placeholder until its
+/// endpoints land. IndexedStack keeps each tab's loaded data when switching.
 class AppShell extends StatefulWidget {
-  const AppShell({super.key, required this.session});
+  const AppShell({super.key, required this.session, required this.service});
 
   final SessionController session;
+  final TeacherService service;
 
   @override
   State<AppShell> createState() => _AppShellState();
@@ -20,19 +25,23 @@ class _AppShellState extends State<AppShell> {
   Widget build(BuildContext context) {
     final teacher = widget.session.teacher!;
     final pages = <Widget>[
-      _Placeholder(
-          title: 'Assalamu\'alaikum,', subtitle: teacher.name, icon: Icons.home),
-      const _Placeholder(
-          title: 'Jadwal mengajar',
-          subtitle: 'Segera hadir',
-          icon: Icons.schedule),
+      HomeScreen(
+        teacher: teacher,
+        service: widget.service,
+        onUnauthorized: widget.session.logout,
+        onOpenSchedule: () => setState(() => _index = 1),
+      ),
+      ScheduleScreen(
+        service: widget.service,
+        onUnauthorized: widget.session.logout,
+      ),
       const _Placeholder(
           title: 'Kotak masuk', subtitle: 'Segera hadir', icon: Icons.inbox),
       _AccountPage(session: widget.session),
     ];
 
     return Scaffold(
-      body: SafeArea(child: pages[_index]),
+      body: SafeArea(child: IndexedStack(index: _index, children: pages)),
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: (i) => setState(() => _index = i),
