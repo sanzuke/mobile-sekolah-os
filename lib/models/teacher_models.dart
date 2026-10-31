@@ -533,3 +533,231 @@ class AttendanceMonth {
     );
   }
 }
+
+// ---- Per-lesson student attendance (/lessons, /schedules/{id}/attendance) ----
+
+class LessonClass {
+  const LessonClass({
+    required this.scheduleId,
+    required this.gradeId,
+    required this.name,
+    required this.submitted,
+    this.present = 0,
+    this.total = 0,
+  });
+
+  final int scheduleId;
+  final int gradeId;
+  final String name;
+  final bool submitted;
+  final int present;
+  final int total;
+
+  factory LessonClass.fromJson(Map<String, dynamic> j) {
+    final a = j['attendance'] as Map<String, dynamic>? ?? const {};
+    return LessonClass(
+      scheduleId: j['schedule_id'] as int,
+      gradeId: j['grade_id'] as int,
+      name: j['name'] as String? ?? '',
+      submitted: a['state'] == 'submitted',
+      // "Hadir" counts late students too: they were in the room.
+      present: ((a['present'] as num?) ?? 0).toInt() +
+          ((a['late'] as num?) ?? 0).toInt(),
+      total: ((a['total'] as num?) ?? 0).toInt(),
+    );
+  }
+}
+
+class LessonItem {
+  const LessonItem({
+    required this.sessionNumber,
+    required this.start,
+    required this.end,
+    required this.subject,
+    required this.classes,
+  });
+
+  final int sessionNumber;
+  final String start;
+  final String end;
+  final String subject;
+  final List<LessonClass> classes;
+
+  factory LessonItem.fromJson(Map<String, dynamic> j) => LessonItem(
+        sessionNumber: j['session_number'] as int? ?? 0,
+        start: j['start'] as String? ?? '',
+        end: j['end'] as String? ?? '',
+        subject: j['subject'] as String? ?? '',
+        classes: _list(j['classes'], LessonClass.fromJson),
+      );
+}
+
+/// Consecutive JP of the same subject in the same class, recorded together.
+class LessonBlock {
+  const LessonBlock({
+    required this.subject,
+    required this.gradeId,
+    required this.className,
+    required this.sessions,
+  });
+
+  final String subject;
+  final int gradeId;
+  final String className;
+
+  /// One entry per JP, ordered. `scheduleId` is what the API saves against.
+  final List<BlockSession> sessions;
+
+  int get firstJp => sessions.first.sessionNumber;
+  int get lastJp => sessions.last.sessionNumber;
+  String get start => sessions.first.start;
+  String get end => sessions.last.end;
+  String get jpLabel => firstJp == lastJp ? 'JP $firstJp' : 'JP $firstJp–$lastJp';
+  List<int> get scheduleIds => [for (final s in sessions) s.scheduleId];
+
+  /// pending | partial | submitted
+  String get state {
+    final done = sessions.where((s) => s.submitted).length;
+    if (done == 0) return 'pending';
+    return done == sessions.length ? 'submitted' : 'partial';
+  }
+
+  /// "28/30 hadir" from the first recorded JP, or null when nothing is recorded.
+  String? get summary {
+    final s = sessions.where((s) => s.submitted && s.total > 0).firstOrNull;
+    return s == null ? null : '${s.present}/${s.total} hadir';
+  }
+}
+
+class BlockSession {
+  const BlockSession({
+    required this.scheduleId,
+    required this.sessionNumber,
+    required this.start,
+    required this.end,
+    required this.submitted,
+    required this.present,
+    required this.total,
+  });
+
+  final int scheduleId;
+  final int sessionNumber;
+  final String start;
+  final String end;
+  final bool submitted;
+  final int present;
+  final int total;
+}
+
+/// Flattens `/lessons` to per-class entries and merges back-to-back JP of the
+/// same subject+class into one block ("JP 1–2"). A gap (e.g. a break between
+/// JP 4 and 5 that skips a number) or a different subject starts a new block.
+List<LessonBlock> buildLessonBlocks(List<LessonItem> lessons) {
+  final byClass = <String, List<(LessonItem, LessonClass)>>{};
+  for (final l in lessons) {
+    for (final c in l.classes) {
+      byClass.putIfAbsent('${c.gradeId}|${l.subject}', () => []).add((l, c));
+    }
+  }
+
+  final blocks = <LessonBlock>[];
+  for (final entries in byClass.values) {
+    entries.sort((a, b) => a.$1.sessionNumber.compareTo(b.$1.sessionNumber));
+    var current = <(LessonItem, LessonClass)>[];
+    void flush() {
+      if (current.isEmpty) return;
+      final first = current.first;
+      blocks.add(LessonBlock(
+        subject: first.$1.subject,
+        gradeId: first.$2.gradeId,
+        className: first.$2.name,
+        sessions: [
+          for (final (l, c) in current)
+            BlockSession(
+              scheduleId: c.scheduleId,
+              sessionNumber: l.sessionNumber,
+              start: l.start,
+              end: l.end,
+              submitted: c.submitted,
+              present: c.present,
+              total: c.total,
+            ),
+        ],
+      ));
+      current = [];
+    }
+
+    for (final e in entries) {
+      if (current.isNotEmpty &&
+          e.$1.sessionNumber != current.last.$1.sessionNumber + 1) {
+        flush();
+      }
+      current.add(e);
+    }
+    flush();
+  }
+
+  blocks.sort((a, b) {
+    final byJp = a.firstJp.compareTo(b.firstJp);
+    return byJp != 0 ? byJp : a.className.compareTo(b.className);
+  });
+  return blocks;
+}
+
+const attendanceStatuses = ['present', 'late', 'sick', 'permission', 'absent'];
+
+class AttendanceStudent {
+  const AttendanceStudent({
+    required this.studentId,
+    required this.name,
+    this.nis,
+    this.status,
+    this.note,
+  });
+
+  final int studentId;
+  final String name;
+  final String? nis;
+
+  /// null = nothing recorded yet for this JP.
+  final String? status;
+  final String? note;
+
+  factory AttendanceStudent.fromJson(Map<String, dynamic> j) =>
+      AttendanceStudent(
+        studentId: j['student_id'] as int,
+        name: j['name'] as String? ?? '',
+        nis: j['nis'] as String?,
+        status: j['status'] as String?,
+        note: j['note'] as String?,
+      );
+}
+
+class AttendanceRoster {
+  const AttendanceRoster({
+    required this.submitted,
+    required this.editable,
+    this.lockedMessage,
+    required this.warnings,
+    required this.students,
+  });
+
+  final bool submitted;
+  final bool editable;
+  final String? lockedMessage;
+  final List<String> warnings;
+  final List<AttendanceStudent> students;
+
+  factory AttendanceRoster.fromJson(Map<String, dynamic> j) {
+    final s = j['session'] as Map<String, dynamic>? ?? const {};
+    return AttendanceRoster(
+      submitted: s['state'] == 'submitted',
+      editable: s['editable'] as bool? ?? false,
+      lockedMessage: s['locked_message'] as String?,
+      warnings: [
+        for (final w in (j['warnings'] as List<dynamic>? ?? const [])) '$w',
+      ],
+      students: _list(j['students'], AttendanceStudent.fromJson),
+    );
+  }
+}

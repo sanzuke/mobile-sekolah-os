@@ -5,6 +5,7 @@ import '../services/teacher_service.dart';
 import '../widgets/async_view.dart';
 import '../widgets/date_format.dart';
 import '../widgets/lesson_tile.dart';
+import 'lessons_screen.dart';
 
 class ScheduleScreen extends StatefulWidget {
   const ScheduleScreen({
@@ -31,6 +32,16 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
       : '${_anchor!.year.toString().padLeft(4, '0')}-'
           '${_anchor!.month.toString().padLeft(2, '0')}-'
           '${_anchor!.day.toString().padLeft(2, '0')}';
+
+  /// Attendance can be recorded for today and up to 7 days back (server rule).
+  bool _canRecord(String iso) {
+    final d = DateTime.tryParse(iso);
+    if (d == null) return false;
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    return !d.isAfter(today) &&
+        !d.isBefore(today.subtract(const Duration(days: 7)));
+  }
 
   void _shiftWeek(ScheduleData data, int weeks) {
     final base = DateTime.tryParse(data.week?.start ?? '') ?? DateTime.now();
@@ -103,6 +114,21 @@ class _ScheduleScreenState extends State<ScheduleScreen> {
               ),
             ),
             const SizedBox(height: 12),
+            if (selected.lessons.isNotEmpty && _canRecord(selected.date))
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: OutlinedButton.icon(
+                  icon: const Icon(Icons.how_to_reg_outlined),
+                  label: Text('Presensi ${formatDate(selected.date, withYear: false)}'),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => LessonsScreen(
+                      service: widget.service,
+                      onUnauthorized: widget.onUnauthorized,
+                      date: selected.date,
+                    ),
+                  )),
+                ),
+              ),
             if (selected.lessons.isEmpty)
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 32),

@@ -18,7 +18,7 @@ Tanpa `API_BASE_URL`, default `http://10.0.2.2:8000/api` (emulator Android → `
 ## Status
 
 Fase 1: login/logout/restore sesi dan kerangka navigasi (Beranda, Jadwal, Kotak masuk, Akun).
-Beranda, Jadwal, Nilai (kelas, siswa, input nilai), Kotak masuk (Pengumuman, Agenda, Notifikasi) dan Akun (termasuk Rekap kehadiran) sudah terhubung ke `/home`, `/schedule`, `/classes`, `/agenda`, `/announcements`, `/notifications`, `/attendance/me`.
+Beranda, Jadwal, Nilai (kelas, siswa, input nilai), Kotak masuk (Pengumuman, Agenda, Notifikasi) dan Akun (termasuk Rekap kehadiran) serta Presensi siswa per sesi (JP berurutan digabung) sudah terhubung ke `/home`, `/schedule`, `/classes`, `/agenda`, `/announcements`, `/notifications`, `/attendance/me`, `/lessons`, `/schedules/{id}/attendance`.
 
 ## Cek
 

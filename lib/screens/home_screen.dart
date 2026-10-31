@@ -7,6 +7,7 @@ import '../widgets/async_view.dart';
 import '../widgets/date_format.dart';
 import '../widgets/lesson_tile.dart';
 import 'announcement_detail_screen.dart';
+import 'lessons_screen.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({
@@ -51,6 +52,23 @@ class HomeScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
             _NextLessonCard(data: data, onOpenSchedule: onOpenSchedule),
+            if (data.lessons.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              SizedBox(
+                width: double.infinity,
+                child: FilledButton.tonalIcon(
+                  icon: const Icon(Icons.how_to_reg_outlined),
+                  label: const Text('Input Presensi Siswa'),
+                  onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => LessonsScreen(
+                      service: service,
+                      onUnauthorized: onUnauthorized,
+                      date: data.date,
+                    ),
+                  )),
+                ),
+              ),
+            ],
             if (data.week != null) ...[
               const SizedBox(height: 12),
               _WeekCard(week: data.week!, semester: data.semesterName),

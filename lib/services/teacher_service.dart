@@ -117,4 +117,40 @@ class TeacherService {
   Future<AttendanceMonth> attendance({String? month}) async =>
       AttendanceMonth.fromJson(await _client.get('/v1/teacher/attendance/me',
           query: month == null ? null : {'month': month}) as Map<String, dynamic>);
+
+  /// Lessons of [date] (`YYYY-MM-DD`) with per-class attendance state.
+  Future<List<LessonItem>> lessons({required String date}) async {
+    final data = await _client.get('/v1/teacher/lessons', query: {'date': date})
+        as List<dynamic>;
+    return data
+        .map((e) => LessonItem.fromJson(e as Map<String, dynamic>))
+        .toList();
+  }
+
+  Future<AttendanceRoster> attendanceRoster({
+    required int scheduleId,
+    required String date,
+  }) async =>
+      AttendanceRoster.fromJson(await _client.get(
+          '/v1/teacher/schedules/$scheduleId/attendance',
+          query: {'date': date}) as Map<String, dynamic>);
+
+  /// [records] maps student id -> (status, note). Idempotent on the server.
+  Future<void> saveAttendance({
+    required int scheduleId,
+    required String date,
+    required Map<int, ({String status, String? note})> records,
+  }) async {
+    await _client.put('/v1/teacher/schedules/$scheduleId/attendance', body: {
+      'date': date,
+      'records': [
+        for (final e in records.entries)
+          {
+            'student_id': e.key,
+            'status': e.value.status,
+            'note': ?e.value.note,
+          },
+      ],
+    });
+  }
 }
