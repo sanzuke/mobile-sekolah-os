@@ -132,7 +132,7 @@ class _WeekView extends StatelessWidget {
     final groups = groupLessons(selectedDay?.lessons ?? const []);
 
     return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 64),
       children: [
         Row(
           children: [
@@ -491,7 +491,10 @@ class _SoonButton extends StatelessWidget {
           ..hideCurrentSnackBar()
           ..showSnackBar(SnackBar(content: Text('$label akan segera hadir')));
       },
-      style: OutlinedButton.styleFrom(foregroundColor: const Color(0xFF64748B)),
+      style: OutlinedButton.styleFrom(
+        foregroundColor: const Color(0xFF64748B),
+        side: const BorderSide(color: Color(0xFFCBD5E1)),
+      ),
       child: Text(label),
     );
   }

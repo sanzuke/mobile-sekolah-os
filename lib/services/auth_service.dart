@@ -38,13 +38,20 @@ class AuthenticatedTeacher {
     );
   }
 
+  /// Two letters for the avatar. Degrees ("S.Pd.", "M.Ag.") are skipped; a one-word
+  /// name uses its first two letters ("Farhahd" -> FA).
   String get initials {
-    final parts =
-        name.trim().split(RegExp(r'\s+')).where((p) => p.isNotEmpty).toList();
-    if (parts.isEmpty) return '?';
-    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
-    return (parts.first.substring(0, 1) + parts.last.substring(0, 1))
-        .toUpperCase();
+    final words = name
+        .trim()
+        .split(RegExp(r'\s+'))
+        .where((w) => w.isNotEmpty && !w.contains('.'))
+        .toList();
+    if (words.isEmpty) return '?';
+    if (words.length == 1) {
+      final w = words.first;
+      return (w.length > 1 ? w.substring(0, 2) : w).toUpperCase();
+    }
+    return (words[0].substring(0, 1) + words[1].substring(0, 1)).toUpperCase();
   }
 }
 

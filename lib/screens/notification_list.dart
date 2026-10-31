@@ -124,7 +124,7 @@ class _NotificationListState extends State<NotificationList> {
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 64),
         itemCount: _items.length + 2,
         itemBuilder: (context, i) {
           if (i == 0) {

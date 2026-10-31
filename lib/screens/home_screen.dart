@@ -38,12 +38,13 @@ class HomeScreen extends StatelessWidget {
         final data = await actions.service.home();
         // Keeps the nav badge in step with every Beranda refresh.
         actions.unread.value = data.unreadNotifications;
+        actions.academicYear.value = data.academicYear;
         return data;
       },
       onUnauthorized: actions.onUnauthorized,
       builder: (context, data) {
         return ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 64),
           children: [
             _Header(teacher: teacher, data: data, actions: actions),
             const SizedBox(height: 16),

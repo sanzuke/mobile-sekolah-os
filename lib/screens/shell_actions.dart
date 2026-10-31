@@ -17,6 +17,7 @@ class ShellActions {
   const ShellActions({
     required this.service,
     required this.unread,
+    required this.academicYear,
     required this.onUnauthorized,
     required this.goTab,
     required this.openInboxSegment,
@@ -24,6 +25,9 @@ class ShellActions {
 
   final TeacherService service;
   final ValueNotifier<int> unread;
+
+  /// Academic year of the active semester (e.g. `2026/2027`), filled in by Beranda.
+  final ValueNotifier<String?> academicYear;
   final VoidCallback onUnauthorized;
   final void Function(int tab) goTab;
   final void Function(int segment) openInboxSegment;

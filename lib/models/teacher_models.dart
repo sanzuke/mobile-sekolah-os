@@ -227,6 +227,7 @@ class HomeData {
     required this.date,
     required this.dayName,
     this.semesterName,
+    this.academicYear,
     this.week,
     required this.todayState,
     required this.draftCount,
@@ -243,6 +244,9 @@ class HomeData {
   final String date;
   final String? dayName;
   final String? semesterName;
+
+  /// e.g. `2026/2027`.
+  final String? academicYear;
   final WeekInfo? week;
 
   /// ok | holiday | unpublished | none | no_lessons
@@ -264,6 +268,7 @@ class HomeData {
       semesterName: semester == null
           ? null
           : '${semester['name'] ?? ''} ${semester['year'] ?? ''}'.trim(),
+      academicYear: semester?['year'] as String?,
       week: week == null ? null : WeekInfo.fromJson(week),
       todayState: today['state'] as String? ?? 'none',
       draftCount: today['draft_count'] as int? ?? 0,

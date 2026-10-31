@@ -292,7 +292,7 @@ class _AnnouncementListState extends State<AnnouncementList> {
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 64),
         itemCount: _items.length + 1,
         itemBuilder: (context, i) {
           if (i == _items.length) {

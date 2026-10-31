@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../services/teacher_service.dart';
 import '../state/session_controller.dart';
-import 'attendance_screen.dart';
+import 'account_screen.dart';
 import 'home_screen.dart';
 import 'inbox_screen.dart';
 import 'quick_actions_sheet.dart';
@@ -28,12 +28,16 @@ class _AppShellState extends State<AppShell> {
   /// Unread notification count, shared by the nav badge, the bell and Kotak masuk.
   final ValueNotifier<int> _unread = ValueNotifier<int>(0);
 
+  /// Academic year shown on Akun; Beranda fills it when it loads.
+  final ValueNotifier<String?> _academicYear = ValueNotifier<String?>(null);
+
   /// Segment of Kotak masuk another screen wants open (-1 = none).
   final ValueNotifier<int> _inboxSegment = ValueNotifier<int>(-1);
 
   late final ShellActions _actions = ShellActions(
     service: widget.service,
     unread: _unread,
+    academicYear: _academicYear,
     onUnauthorized: widget.session.logout,
     goTab: (tab) => setState(() => _index = tab),
     openInboxSegment: (segment) {
@@ -45,6 +49,7 @@ class _AppShellState extends State<AppShell> {
   @override
   void dispose() {
     _unread.dispose();
+    _academicYear.dispose();
     _inboxSegment.dispose();
     super.dispose();
   }
@@ -63,7 +68,11 @@ class _AppShellState extends State<AppShell> {
         onUnauthorized: widget.session.logout,
         segmentRequest: _inboxSegment,
       ),
-      _AccountPage(session: widget.session, service: widget.service),
+      AccountScreen(
+        teacher: widget.session.teacher!,
+        academicYear: _academicYear,
+        onLogout: widget.session.logout,
+      ),
     ];
 
     return Scaffold(
@@ -176,60 +185,6 @@ class _NavItem extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-class _AccountPage extends StatelessWidget {
-  const _AccountPage({required this.session, required this.service});
-
-  final SessionController session;
-  final TeacherService service;
-
-  @override
-  Widget build(BuildContext context) {
-    final t = session.teacher!;
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Row(
-          children: [
-            CircleAvatar(radius: 28, child: Text(t.initials)),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(t.name, style: Theme.of(context).textTheme.titleMedium),
-                  Text(t.isHomeroom ? 'Wali kelas' : 'Guru'),
-                  if (t.nip != null) Text('NIP ${t.nip}'),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        ListTile(
-          contentPadding: EdgeInsets.zero,
-          leading: const Icon(Icons.event_available_outlined),
-          title: const Text('Rekap kehadiran'),
-          subtitle: const Text('Presensi Anda dari mesin absen'),
-          trailing: const Icon(Icons.chevron_right),
-          onTap: () => Navigator.of(context).push(MaterialPageRoute(
-            builder: (_) => AttendanceScreen(
-              service: service,
-              onUnauthorized: session.logout,
-            ),
-          )),
-        ),
-        const Divider(),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          onPressed: session.logout,
-          icon: const Icon(Icons.logout),
-          label: const Text('Keluar'),
-        ),
-      ],
     );
   }
 }
