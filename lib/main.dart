@@ -9,6 +9,9 @@ import 'state/session_controller.dart';
 import 'theme/app_theme.dart';
 
 void main() {
+  // Secure storage (session restore) uses a platform channel; the binding must
+  // exist before SessionController.start() touches it.
+  WidgetsFlutterBinding.ensureInitialized();
   final client = ApiClient();
   final session = SessionController(AuthService(client: client))..start();
   runApp(SekolahOsApp(session: session, service: TeacherService(client)));

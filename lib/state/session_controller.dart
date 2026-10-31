@@ -18,8 +18,9 @@ class SessionController extends ChangeNotifier {
   Future<void> start() async {
     try {
       teacher = await _auth.restore();
-    } on ApiException {
-      // Offline or server down on cold start: fall back to the login screen.
+    } catch (_) {
+      // Offline, server down, or storage unavailable on cold start: never stay
+      // on the spinner — fall back to the login screen.
       teacher = null;
     }
     status = teacher == null ? SessionStatus.signedOut : SessionStatus.signedIn;
