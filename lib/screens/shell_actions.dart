@@ -8,8 +8,8 @@ const kTabInbox = 2;
 const kTabAccount = 3;
 
 const kInboxAnnouncements = 0;
-const kInboxAgenda = 1;
-const kInboxNotifications = 2;
+const kInboxNotifications = 1;
+const kInboxReports = 2;
 
 /// What screens opened from the shell need: the API, the shared unread badge,
 /// and ways to switch tabs. Keeps child screens free of the shell's state.

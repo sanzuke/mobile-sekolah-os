@@ -4,12 +4,14 @@ import '../models/teacher_models.dart';
 import '../services/api_client.dart';
 import '../services/teacher_service.dart';
 import '../widgets/async_view.dart';
-import '../widgets/date_format.dart';
+import '../widgets/surface_cards.dart';
 import 'announcement_detail_screen.dart';
 import 'notification_list.dart';
+import 'shell_actions.dart';
 
-/// "Kotak masuk" tab: Pengumuman, Agenda and Notifikasi. Laporan from the
-/// design lands here when its endpoint exists.
+/// "Kotak masuk" tab as in the design: a title, a Pengumuman / Notifikasi /
+/// Laporan switch, and a card list (or a friendly empty state) under it.
+/// Agenda is not here: it lives on Beranda and under the "Agenda Sekolah" menu.
 class InboxScreen extends StatefulWidget {
   const InboxScreen({
     super.key,
@@ -32,7 +34,7 @@ class InboxScreen extends StatefulWidget {
 }
 
 class _InboxScreenState extends State<InboxScreen> {
-  int _segment = 0;
+  int _segment = kInboxAnnouncements;
 
   @override
   void initState() {
@@ -57,30 +59,22 @@ class _InboxScreenState extends State<InboxScreen> {
   @override
   Widget build(BuildContext context) {
     return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          child: SegmentedButton<int>(
-            segments: [
-              const ButtonSegment(value: 0, label: Text('Pengumuman')),
-              const ButtonSegment(value: 1, label: Text('Agenda')),
-              ButtonSegment(
-                value: 2,
-                label: ValueListenableBuilder<int>(
-                  valueListenable: widget.unread,
-                  builder: (_, count, _) => Badge(
-                    isLabelVisible: count > 0,
-                    label: Text('$count'),
-                    child: const Padding(
-                      padding: EdgeInsets.only(right: 8),
-                      child: Text('Notifikasi'),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-            selected: {_segment},
-            onSelectionChanged: (s) => setState(() => _segment = s.first),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+          child: Text('Kotak masuk',
+              style: Theme.of(context)
+                  .textTheme
+                  .headlineSmall
+                  ?.copyWith(fontWeight: FontWeight.w800)),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
+          child: _SegmentPills(
+            selected: _segment,
+            unread: widget.unread,
+            onSelect: (i) => setState(() => _segment = i),
           ),
         ),
         Expanded(
@@ -90,15 +84,131 @@ class _InboxScreenState extends State<InboxScreen> {
               AnnouncementList(
                   service: widget.service,
                   onUnauthorized: widget.onUnauthorized),
-              AgendaList(
-                  service: widget.service,
-                  onUnauthorized: widget.onUnauthorized),
               NotificationList(
                   service: widget.service,
                   unread: widget.unread,
                   onUnauthorized: widget.onUnauthorized),
+              const _ReportsEmpty(),
             ],
           ),
+        ),
+      ],
+    );
+  }
+}
+
+/// The design's switch: a grey track with the active option as a white pill.
+class _SegmentPills extends StatelessWidget {
+  const _SegmentPills({
+    required this.selected,
+    required this.unread,
+    required this.onSelect,
+  });
+
+  final int selected;
+  final ValueNotifier<int> unread;
+  final ValueChanged<int> onSelect;
+
+  static const _labels = ['Pengumuman', 'Notifikasi', 'Laporan'];
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE2E8F0),
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          for (var i = 0; i < _labels.length; i++)
+            Expanded(
+              child: Semantics(
+                button: true,
+                selected: i == selected,
+                child: InkWell(
+                  key: ValueKey('inbox-segment-$i'),
+                  borderRadius: BorderRadius.circular(10),
+                  onTap: () => onSelect(i),
+                  child: Container(
+                    height: 40,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: i == selected ? Colors.white : Colors.transparent,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: _label(i),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _label(int i) {
+    final text = Text(
+      _labels[i],
+      maxLines: 1,
+      softWrap: false,
+      overflow: TextOverflow.ellipsis,
+      style: TextStyle(
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        color: i == selected ? const Color(0xFF0F172A) : const Color(0xFF475569),
+      ),
+    );
+    if (i != kInboxNotifications) return text;
+    // Unread count on "Notifikasi".
+    return ValueListenableBuilder<int>(
+      valueListenable: unread,
+      builder: (_, count, _) => Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Flexible: with a large system font the label shrinks instead of overflowing.
+          Flexible(child: text),
+          if (count > 0) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+              decoration: BoxDecoration(
+                color: const Color(0xFFDC2626),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(count > 9 ? '9+' : '$count',
+                  style: const TextStyle(
+                      fontSize: 11,
+                      color: Colors.white,
+                      fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// "Laporan" (kejadian siswa, sarpras, kendaraan) has no backend yet.
+class _ReportsEmpty extends StatelessWidget {
+  const _ReportsEmpty();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      children: [
+        EmptyState(
+          icon: Icons.insert_chart_outlined,
+          title: 'Belum ada laporan',
+          message:
+              'Laporan yang Anda kirim akan muncul di sini beserta status dan balasan staf.',
+          actionLabel: 'Buat laporan',
+          onAction: () {
+            ScaffoldMessenger.of(context)
+              ..hideCurrentSnackBar()
+              ..showSnackBar(const SnackBar(
+                  content: Text('Buat laporan akan segera hadir')));
+          },
         ),
       ],
     );
@@ -165,20 +275,14 @@ class _AnnouncementListState extends State<AnnouncementList> {
       return RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
-          padding: const EdgeInsets.all(24),
           children: [
-            const SizedBox(height: 60),
-            Icon(_error == null ? Icons.campaign_outlined : Icons.cloud_off,
-                size: 48, color: Theme.of(context).colorScheme.outline),
-            const SizedBox(height: 12),
-            Text(_error ?? 'Belum ada pengumuman.',
-                textAlign: TextAlign.center),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Center(
-                  child: FilledButton(
-                      onPressed: _refresh, child: const Text('Coba lagi'))),
-            ],
+            EmptyState(
+              icon: _error == null ? Icons.campaign_outlined : Icons.cloud_off,
+              title: _error == null ? 'Belum ada pengumuman' : 'Gagal memuat',
+              message: _error ?? 'Pengumuman sekolah akan muncul di sini.',
+              actionLabel: _error == null ? null : 'Coba lagi',
+              onAction: _refresh,
+            ),
           ],
         ),
       );
@@ -188,7 +292,7 @@ class _AnnouncementListState extends State<AnnouncementList> {
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
         itemCount: _items.length + 1,
         itemBuilder: (context, i) {
           if (i == _items.length) {
@@ -197,9 +301,9 @@ class _AnnouncementListState extends State<AnnouncementList> {
                   onPressed: _loadMore,
                   child: Text('$_error Ketuk untuk coba lagi.'));
             }
-            if (!hasMore) return const SizedBox(height: 24);
+            if (!hasMore) return const SizedBox.shrink();
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 8),
               child: Center(
                 child: _loading
                     ? const CircularProgressIndicator()
@@ -210,16 +314,8 @@ class _AnnouncementListState extends State<AnnouncementList> {
             );
           }
           final a = _items[i];
-          return ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: const Icon(Icons.campaign_outlined),
-            title: Text(a.title, maxLines: 2, overflow: TextOverflow.ellipsis),
-            subtitle: Text([
-              if (a.category != null) a.category!,
-              if (a.publishedAt != null)
-                formatDate(a.publishedAt!.toLocal().toIso8601String()),
-            ].join(' · ')),
-            trailing: const Icon(Icons.chevron_right),
+          return AnnouncementCard(
+            item: a,
             onTap: () => Navigator.of(context).push(MaterialPageRoute(
               builder: (_) => AnnouncementDetailScreen(
                 id: a.id,
@@ -235,6 +331,7 @@ class _AnnouncementListState extends State<AnnouncementList> {
   }
 }
 
+/// Full school agenda (30 days ahead), opened from "Agenda Sekolah" in the menu.
 class AgendaList extends StatelessWidget {
   const AgendaList(
       {super.key, required this.service, required this.onUnauthorized});
@@ -250,43 +347,21 @@ class AgendaList extends StatelessWidget {
       builder: (context, items) {
         if (items.isEmpty) {
           return ListView(
-            padding: const EdgeInsets.all(24),
             children: const [
-              SizedBox(height: 60),
-              Icon(Icons.event_busy, size: 48),
-              SizedBox(height: 12),
-              Text('Tidak ada agenda dalam 30 hari ke depan.',
-                  textAlign: TextAlign.center),
+              EmptyState(
+                icon: Icons.event_busy,
+                title: 'Tidak ada agenda',
+                message: 'Belum ada agenda sekolah dalam 30 hari ke depan.',
+              ),
             ],
           );
         }
         return ListView.builder(
-          padding: const EdgeInsets.symmetric(horizontal: 16),
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
           itemCount: items.length,
-          itemBuilder: (context, i) {
-            final a = items[i];
-            return ListTile(
-              contentPadding: EdgeInsets.zero,
-              leading: const Icon(Icons.event),
-              title: Text(a.title),
-              subtitle: Text([
-                _dates(a),
-                if (a.timeRange != null) a.timeRange!,
-                if (a.location != null) a.location!,
-                a.typeLabel,
-              ].join(' · ')),
-            );
-          },
+          itemBuilder: (context, i) => AgendaCard(item: items[i], showDate: true),
         );
       },
     );
-  }
-
-  static String _dates(AgendaItem a) {
-    final s = a.startDate;
-    final e = a.endDate;
-    if (s == null) return '';
-    if (e == null || e == s) return formatDate(s);
-    return formatRange(s, e);
   }
 }

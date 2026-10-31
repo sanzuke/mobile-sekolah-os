@@ -789,3 +789,91 @@ class AttendanceRoster {
     );
   }
 }
+
+// ---- Schedule display: back-to-back JP shown as one card ("JP 1–2") ----
+
+/// Consecutive JP of the same subject and class(es) on one day.
+class LessonGroup {
+  const LessonGroup({
+    required this.subject,
+    required this.classes,
+    required this.sessions,
+    this.room,
+  });
+
+  final String subject;
+
+  /// "8D" or, for a kelas gabungan, "9A + 9B".
+  final String classes;
+  final String? room;
+  final List<Lesson> sessions;
+
+  int get firstJp => sessions.first.sessionNumber;
+  int get lastJp => sessions.last.sessionNumber;
+  String get start => sessions.first.start;
+  String get end => sessions.last.end;
+  String get jpLabel => firstJp == lastJp ? 'JP $firstJp' : 'JP $firstJp–$lastJp';
+  String get timeRange => '$start – $end';
+
+  /// current | next | done | upcoming (today only; other days are all `upcoming`).
+  String get status {
+    if (sessions.any((s) => s.status == 'current')) return 'current';
+    if (sessions.any((s) => s.status == 'next')) return 'next';
+    if (sessions.every((s) => s.status == 'done')) return 'done';
+    return 'upcoming';
+  }
+}
+
+/// Merges back-to-back JP (n, n+1, ...) with the same subject and classes.
+/// A gap in numbering or a different subject/class starts a new group.
+List<LessonGroup> groupLessons(List<Lesson> lessons) {
+  final sorted = [...lessons]
+    ..sort((a, b) => a.sessionNumber.compareTo(b.sessionNumber));
+  final groups = <LessonGroup>[];
+  var current = <Lesson>[];
+
+  void flush() {
+    if (current.isEmpty) return;
+    groups.add(LessonGroup(
+      subject: current.first.subject,
+      classes: current.first.classes,
+      room: current.first.room,
+      sessions: current,
+    ));
+    current = [];
+  }
+
+  for (final l in sorted) {
+    if (current.isNotEmpty) {
+      final last = current.last;
+      final continues = l.sessionNumber == last.sessionNumber + 1 &&
+          l.subject == last.subject &&
+          l.classes == last.classes;
+      if (!continues) flush();
+    }
+    current.add(l);
+  }
+  flush();
+  return groups;
+}
+
+/// How far attendance is for a schedule group, from the day's [LessonBlock]s.
+/// null = no information (nothing to match); otherwise pending | partial | submitted.
+({String state, String? summary})? attendanceForGroup(
+    LessonGroup group, List<LessonBlock> blocks) {
+  final matching = blocks.where((b) =>
+      b.subject == group.subject &&
+      b.firstJp >= group.firstJp &&
+      b.lastJp <= group.lastJp);
+  if (matching.isEmpty) return null;
+
+  final states = matching.map((b) => b.state).toSet();
+  final summary = matching.map((b) => b.summary).nonNulls.firstOrNull;
+  if (states.length == 1 && states.first == 'submitted') {
+    return (state: 'submitted', summary: summary);
+  }
+  if (states.length == 1 && states.first == 'pending') {
+    return (state: 'pending', summary: null);
+  }
+  return (state: 'partial', summary: summary);
+}

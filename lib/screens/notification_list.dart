@@ -4,9 +4,10 @@ import '../models/teacher_models.dart';
 import '../services/api_client.dart';
 import '../services/teacher_service.dart';
 import '../widgets/date_format.dart';
+import '../widgets/surface_cards.dart';
 
-/// Paginated notification list. Tapping an unread item marks it read
-/// (optimistically); [unread] drives the badge shown in the nav bar.
+/// Paginated notification cards. Tapping an unread one marks it read
+/// (optimistically); [unread] drives the badges in the nav bar and on Beranda.
 class NotificationList extends StatefulWidget {
   const NotificationList({
     super.key,
@@ -105,34 +106,25 @@ class _NotificationListState extends State<NotificationList> {
       return RefreshIndicator(
         onRefresh: _refresh,
         child: ListView(
-          padding: const EdgeInsets.all(24),
           children: [
-            const SizedBox(height: 60),
-            Icon(_error == null ? Icons.notifications_none : Icons.cloud_off,
-                size: 48, color: Theme.of(context).colorScheme.outline),
-            const SizedBox(height: 12),
-            Text(
-              _error ??
-                  'Belum ada notifikasi baru.\nPersetujuan izin, tugas, dan undangan rapat akan muncul di sini.',
-              textAlign: TextAlign.center,
+            EmptyState(
+              icon: _error == null ? Icons.notifications_none : Icons.cloud_off,
+              title: _error == null ? 'Belum ada notifikasi baru' : 'Gagal memuat',
+              message: _error ??
+                  'Persetujuan izin, tugas, dan undangan rapat akan muncul di sini.',
+              actionLabel: _error == null ? null : 'Coba lagi',
+              onAction: _refresh,
             ),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              Center(
-                  child: FilledButton(
-                      onPressed: _refresh, child: const Text('Coba lagi'))),
-            ],
           ],
         ),
       );
     }
 
-    final scheme = Theme.of(context).colorScheme;
     final hasMore = _page < _lastPage;
     return RefreshIndicator(
       onRefresh: _refresh,
       child: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
         itemCount: _items.length + 2,
         itemBuilder: (context, i) {
           if (i == 0) {
@@ -154,9 +146,9 @@ class _NotificationListState extends State<NotificationList> {
                   onPressed: _loadMore,
                   child: Text('$_error Ketuk untuk coba lagi.'));
             }
-            if (!hasMore) return const SizedBox(height: 24);
+            if (!hasMore) return const SizedBox.shrink();
             return Padding(
-              padding: const EdgeInsets.symmetric(vertical: 12),
+              padding: const EdgeInsets.symmetric(vertical: 8),
               child: Center(
                 child: _loading
                     ? const CircularProgressIndicator()
@@ -166,24 +158,74 @@ class _NotificationListState extends State<NotificationList> {
               ),
             );
           }
-          final n = _items[index];
-          return ListTile(
-            contentPadding: EdgeInsets.zero,
-            leading: Icon(
-              n.isRead ? Icons.notifications_none : Icons.notifications_active,
-              color: n.isRead ? scheme.outline : scheme.primary,
-            ),
-            title: Text(n.title,
-                style: TextStyle(
-                    fontWeight: n.isRead ? FontWeight.normal : FontWeight.w700)),
-            subtitle: Text([
-              if (n.body != null) n.body!,
-              if (n.createdAt != null) formatDateTime(n.createdAt!),
-            ].join('\n')),
-            isThreeLine: n.body != null,
-            onTap: () => _open(index),
-          );
+          return _NotificationCard(item: _items[index], onTap: () => _open(index));
         },
+      ),
+    );
+  }
+}
+
+class _NotificationCard extends StatelessWidget {
+  const _NotificationCard({required this.item, required this.onTap});
+
+  final NotificationItem item;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final text = Theme.of(context).textTheme;
+    final unread = !item.isRead;
+    return Surface(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.all(14),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: unread
+                    ? scheme.primary.withValues(alpha: 0.12)
+                    : const Color(0xFFF1F5F9),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                unread ? Icons.notifications_active : Icons.notifications_none,
+                color: unread ? scheme.primary : const Color(0xFF64748B),
+                size: 22,
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(item.title,
+                      style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: unread ? FontWeight.w800 : FontWeight.w600)),
+                  if (item.body != null) ...[
+                    const SizedBox(height: 2),
+                    Text(item.body!, style: text.bodyMedium),
+                  ],
+                  if (item.createdAt != null) ...[
+                    const SizedBox(height: 6),
+                    Text(formatDateTime(item.createdAt!), style: text.bodySmall),
+                  ],
+                ],
+              ),
+            ),
+            if (unread)
+              const Padding(
+                padding: EdgeInsets.only(left: 8, top: 4),
+                child: CircleAvatar(
+                    radius: 5, backgroundColor: Color(0xFFDC2626)),
+              ),
+          ],
+        ),
       ),
     );
   }

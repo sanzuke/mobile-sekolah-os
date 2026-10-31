@@ -6,7 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
 import 'package:mobile_sekolah_os/models/teacher_models.dart';
 import 'package:mobile_sekolah_os/screens/app_shell.dart';
-import 'package:mobile_sekolah_os/screens/home_screen.dart' show agendaColors;
+import 'package:mobile_sekolah_os/widgets/surface_cards.dart' show agendaColors;
 import 'package:mobile_sekolah_os/services/api_client.dart';
 import 'package:mobile_sekolah_os/services/auth_service.dart';
 import 'package:mobile_sekolah_os/services/teacher_service.dart';
@@ -50,11 +50,18 @@ Future<ApiClient> _pumpShell(WidgetTester tester, Map<String, dynamic> home) asy
 
   final client = ApiClient(
     client: MockClient((req) async {
-      final body = req.url.path.endsWith('/home')
-          ? home
-          : <String, dynamic>{};
+      final path = req.url.path;
+      Object body = <String, dynamic>{};
+      Object meta = {};
+      if (path.endsWith('/home')) {
+        body = home;
+      } else if (path.endsWith('/notifications') || path.endsWith('/announcements')) {
+        body = <Object>[];
+        // Beranda and the notification list read the same server-side count.
+        meta = {'last_page': 1, 'unread_count': home['unread_notifications'] ?? 0};
+      }
       return http.Response(
-          jsonEncode({'data': body, 'meta': {}, 'errors': null}), 200,
+          jsonEncode({'data': body, 'meta': meta, 'errors': null}), 200,
           headers: {'content-type': 'application/json'});
     }),
   );
@@ -170,8 +177,8 @@ void main() {
     await tester.tap(find.byIcon(Icons.notifications_none).first);
     await tester.pumpAndSettle();
 
-    final seg = tester.widget<SegmentedButton<int>>(find.byType(SegmentedButton<int>));
-    expect(seg.selected, {2});
+    // Kotak masuk is open on Notifikasi (its empty state is on screen).
+    expect(find.text('Belum ada notifikasi baru'), findsOneWidget);
   });
 
   testWidgets('with a lesson running, the card offers Input Presensi Siswa',
