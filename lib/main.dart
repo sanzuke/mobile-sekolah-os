@@ -11,6 +11,7 @@ import 'services/update_service.dart';
 import 'state/push_registrar.dart';
 import 'state/session_controller.dart';
 import 'theme/app_theme.dart';
+import 'widgets/content_width.dart';
 
 Future<void> main() async {
   // Secure storage (session restore) uses a platform channel; the binding must
@@ -57,6 +58,7 @@ class SekolahOsApp extends StatelessWidget {
       localizationsDelegates: GlobalMaterialLocalizations.delegates,
       debugShowCheckedModeBanner: false,
       theme: buildTheme(),
+      builder: (context, child) => ContentWidth(child: child!),
       home: ListenableBuilder(
         listenable: session,
         builder: (context, _) => switch (session.status) {
