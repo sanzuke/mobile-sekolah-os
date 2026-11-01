@@ -164,7 +164,8 @@ void main() {
 
     await tester.tap(find.text('Pinjam kendaraan'));
     await tester.pumpAndSettle();
-    expect(find.text('Pinjam kendaraan akan segera hadir'), findsOneWidget);
+    expect(find.text('Pinjam kendaraan akan segera hadir'), findsNothing);
+    expect(find.text('Kirim pengajuan'), findsOneWidget);
   });
 
   testWidgets('Aksi cepat fits a landscape tablet (short screen): no overflow, last row reachable',

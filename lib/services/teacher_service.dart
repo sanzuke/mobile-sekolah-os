@@ -5,6 +5,7 @@ import '../models/incident_models.dart';
 import '../models/leave_models.dart';
 import '../models/meeting_models.dart';
 import '../models/teacher_models.dart';
+import '../models/vehicle_models.dart';
 import 'api_client.dart';
 
 class TeacherService {
@@ -328,6 +329,44 @@ class TeacherService {
   Future<FacilityReport> cancelFacilityReport(int id) async =>
       FacilityReport.fromJson(
           await _client.post('/v1/teacher/facility-reports/$id/cancel')
+              as Map<String, dynamic>);
+
+  Future<VehicleRequestPage> vehicleRequests({String? status, int page = 1}) async {
+    final res = await _client.getEnvelope('/v1/teacher/vehicle-requests',
+        query: {'page': '$page', 'per_page': '20', 'status': ?status});
+    final meta = res['meta'] as Map<String, dynamic>;
+    return VehicleRequestPage(
+      items: (res['data'] as List<dynamic>)
+          .map((e) => VehicleRequest.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      lastPage: meta['last_page'] as int? ?? 1,
+    );
+  }
+
+  Future<VehicleRequest> vehicleRequest(int id) async =>
+      VehicleRequest.fromJson(
+          await _client.get('/v1/teacher/vehicle-requests/$id')
+              as Map<String, dynamic>);
+
+  /// Which vehicles are free between [from] and [to] (`YYYY-MM-DD HH:mm`, WIB).
+  Future<List<VehicleOption>> vehicleAvailability(String from, String to) async =>
+      (await _client.get('/v1/teacher/vehicles/availability',
+              query: {'from': from, 'to': to}) as List<dynamic>)
+          .map((e) => VehicleOption.fromJson(e as Map<String, dynamic>))
+          .toList();
+
+  /// Files the request, or replaces a still-pending one when [id] is given.
+  Future<VehicleRequest> saveVehicleRequest(Map<String, dynamic> body,
+      {int? id}) async {
+    final data = id == null
+        ? await _client.post('/v1/teacher/vehicle-requests', body: body)
+        : await _client.put('/v1/teacher/vehicle-requests/$id', body: body);
+    return VehicleRequest.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<VehicleRequest> cancelVehicleRequest(int id) async =>
+      VehicleRequest.fromJson(
+          await _client.post('/v1/teacher/vehicle-requests/$id/cancel')
               as Map<String, dynamic>);
 
   /// Registers this phone for push (`token` is the FCM registration token).

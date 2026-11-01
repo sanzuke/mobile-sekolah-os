@@ -7,6 +7,7 @@ import 'leave_requests_screen.dart';
 import 'facility_reports_screen.dart';
 import 'incidents_screen.dart';
 import 'meeting_minutes_screen.dart';
+import 'vehicle_requests_screen.dart';
 import 'lessons_screen.dart';
 import 'shell_actions.dart';
 
@@ -179,11 +180,13 @@ final List<MenuEntry> menuEntries = [
       group: MenuGroup.laporan,
       page: (context, a) => FacilityReportsScreen(
           service: a.service, onUnauthorized: a.onUnauthorized)),
-  const MenuEntry(
+  MenuEntry(
       id: 'kendaraan',
       label: 'Pinjam Kendaraan',
       icon: Icons.directions_car_outlined,
-      group: MenuGroup.laporan),
+      group: MenuGroup.laporan,
+      page: (context, a) => VehicleRequestsScreen(
+          service: a.service, onUnauthorized: a.onUnauthorized)),
   const MenuEntry(
       id: 'laporan_saya',
       label: 'Laporan Saya',

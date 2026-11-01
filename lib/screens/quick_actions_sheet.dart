@@ -10,6 +10,8 @@ import 'incident_form_screen.dart';
 import 'meeting_minute_detail_screen.dart';
 import 'meeting_minute_form_screen.dart';
 import 'shell_actions.dart';
+import 'vehicle_detail_screen.dart';
+import 'vehicle_form_screen.dart';
 
 class _Quick {
   const _Quick(this.id, this.label, this.sub, this.icon, this.bg, this.fg);
@@ -50,7 +52,7 @@ const _quick = [
   _Quick(
     'vehicle',
     'Pinjam kendaraan',
-    'Cek ketersediaan, ajukan ke PJ',
+    'Cek ketersediaan, ajukan ke pengelola',
     Icons.directions_car_outlined,
     Color(0xFFE0E7FF),
     Color(0xFF3730A3),
@@ -138,7 +140,21 @@ Future<void> _openFacilityForm(
           id: saved.id)));
 }
 
-/// The "+" in the middle of the bottom bar. Izin / cuti, notulen, kejadian siswa and sarpras are live; the others have
+/// "Pinjam kendaraan": the form, then the request that was just filed.
+Future<void> _openVehicleForm(
+    BuildContext context, ShellActions actions) async {
+  final navigator = Navigator.of(context);
+  final saved =
+      await openVehicleForm(context, actions.service, actions.onUnauthorized);
+  if (saved == null) return;
+  await navigator.push(MaterialPageRoute(
+      builder: (_) => VehicleDetailScreen(
+          service: actions.service,
+          onUnauthorized: actions.onUnauthorized,
+          id: saved.id)));
+}
+
+/// The "+" in the middle of the bottom bar. Izin / cuti, notulen, kejadian siswa, sarpras and kendaraan are live; the others have
 /// no backend yet, so each says it is coming rather than pretending to work.
 Future<void> showQuickActions(BuildContext context, ShellActions actions) {
   final messenger = ScaffoldMessenger.of(context);
@@ -184,6 +200,10 @@ Future<void> showQuickActions(BuildContext context, ShellActions actions) {
                   }
                   if (q.id == 'incident') {
                     _openIncidentForm(context, actions);
+                    return;
+                  }
+                  if (q.id == 'vehicle') {
+                    _openVehicleForm(context, actions);
                     return;
                   }
                   if (q.id == 'facility') {

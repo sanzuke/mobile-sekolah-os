@@ -16,6 +16,7 @@ import 'leave_detail_screen.dart';
 import 'incident_detail_screen.dart';
 import 'meeting_minute_detail_screen.dart';
 import 'notification_target.dart';
+import 'vehicle_detail_screen.dart';
 import 'quick_actions_sheet.dart';
 import 'schedule_screen.dart';
 import 'shell_actions.dart';
@@ -126,6 +127,12 @@ class _AppShellState extends State<AppShell> {
               service: widget.service,
               onUnauthorized: widget.session.logout,
               id: m.leaveRequestId!)));
+    } else if (m.type == 'vehicle_request' && m.vehicleRequestId != null) {
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => VehicleDetailScreen(
+              service: widget.service,
+              onUnauthorized: widget.session.logout,
+              id: m.vehicleRequestId!)));
     } else if (m.type == 'facility_report' && m.facilityReportId != null) {
       Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => FacilityDetailScreen(
