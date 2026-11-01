@@ -4,6 +4,7 @@ import 'attendance_screen.dart';
 import 'classes_screen.dart';
 import 'inbox_screen.dart';
 import 'leave_requests_screen.dart';
+import 'incidents_screen.dart';
 import 'meeting_minutes_screen.dart';
 import 'lessons_screen.dart';
 import 'shell_actions.dart';
@@ -163,11 +164,13 @@ final List<MenuEntry> menuEntries = [
       label: 'Tugas Saya',
       icon: Icons.assignment_outlined,
       group: MenuGroup.kepegawaian),
-  const MenuEntry(
+  MenuEntry(
       id: 'kejadian',
       label: 'Kejadian Siswa',
       icon: Icons.warning_amber_outlined,
-      group: MenuGroup.laporan),
+      group: MenuGroup.laporan,
+      page: (context, a) => IncidentsScreen(
+          service: a.service, onUnauthorized: a.onUnauthorized)),
   const MenuEntry(
       id: 'sarpras',
       label: 'Sarpras',

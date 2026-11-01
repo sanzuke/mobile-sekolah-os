@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 
+import '../models/incident_models.dart';
 import '../models/leave_models.dart';
 import '../models/meeting_models.dart';
 import '../models/teacher_models.dart';
@@ -261,6 +262,41 @@ class TeacherService {
   Future<void> deleteMeetingMinute(int id) async {
     await _client.delete('/v1/teacher/meeting-minutes/$id');
   }
+
+  Future<StudentIncidentPage> incidents({String? status, int page = 1}) async {
+    final res = await _client.getEnvelope('/v1/teacher/incidents',
+        query: {'page': '$page', 'per_page': '20', 'status': ?status});
+    final meta = res['meta'] as Map<String, dynamic>;
+    return StudentIncidentPage(
+      items: (res['data'] as List<dynamic>)
+          .map((e) => StudentIncident.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      lastPage: meta['last_page'] as int? ?? 1,
+    );
+  }
+
+  Future<StudentIncident> incident(int id) async => StudentIncident.fromJson(
+      await _client.get('/v1/teacher/incidents/$id') as Map<String, dynamic>);
+
+  /// Active students by name or NIS; the server wants at least two characters.
+  Future<List<IncidentStudent>> studentOptions(String query) async =>
+      (await _client.get('/v1/teacher/incidents/student-options',
+              query: {'q': query}) as List<dynamic>)
+          .map((e) => IncidentStudent.fromOption(e as Map<String, dynamic>))
+          .toList();
+
+  /// Files the report, or replaces a still-`reported` one when [id] is given.
+  Future<StudentIncident> saveIncident(Map<String, dynamic> body, {int? id}) async {
+    final data = id == null
+        ? await _client.post('/v1/teacher/incidents', body: body)
+        : await _client.put('/v1/teacher/incidents/$id', body: body);
+    return StudentIncident.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<StudentIncident> cancelIncident(int id) async =>
+      StudentIncident.fromJson(
+          await _client.post('/v1/teacher/incidents/$id/cancel')
+              as Map<String, dynamic>);
 
   /// Registers this phone for push (`token` is the FCM registration token).
   Future<void> registerDevice(String token) async {

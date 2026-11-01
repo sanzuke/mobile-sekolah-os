@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/leave_models.dart';
 import 'leave_detail_screen.dart';
 import 'leave_form_screen.dart';
+import 'incident_detail_screen.dart';
+import 'incident_form_screen.dart';
 import 'meeting_minute_detail_screen.dart';
 import 'meeting_minute_form_screen.dart';
 import 'shell_actions.dart';
@@ -106,7 +108,21 @@ Future<void> _openMinutesForm(
           id: saved.id)));
 }
 
-/// The "+" in the middle of the bottom bar. Izin / cuti and notulen are live; the others have
+/// "Lapor kejadian siswa": the form, then the report that was just filed.
+Future<void> _openIncidentForm(
+    BuildContext context, ShellActions actions) async {
+  final navigator = Navigator.of(context);
+  final saved =
+      await openIncidentForm(context, actions.service, actions.onUnauthorized);
+  if (saved == null) return;
+  await navigator.push(MaterialPageRoute(
+      builder: (_) => IncidentDetailScreen(
+          service: actions.service,
+          onUnauthorized: actions.onUnauthorized,
+          id: saved.id)));
+}
+
+/// The "+" in the middle of the bottom bar. Izin / cuti, notulen and kejadian siswa are live; the others have
 /// no backend yet, so each says it is coming rather than pretending to work.
 Future<void> showQuickActions(BuildContext context, ShellActions actions) {
   final messenger = ScaffoldMessenger.of(context);
@@ -148,6 +164,10 @@ Future<void> showQuickActions(BuildContext context, ShellActions actions) {
                   Navigator.pop(sheetContext);
                   if (q.id == 'leave') {
                     _openLeaveForm(context, actions);
+                    return;
+                  }
+                  if (q.id == 'incident') {
+                    _openIncidentForm(context, actions);
                     return;
                   }
                   if (q.id == 'minutes') {
