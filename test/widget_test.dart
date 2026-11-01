@@ -8,7 +8,7 @@ import 'package:flutter/material.dart';
 void main() {
   testWidgets('login screen shows email, password and Masuk', (tester) async {
     final session = SessionController(AuthService(client: ApiClient()));
-    await tester.pumpWidget(MaterialApp(home: LoginScreen(session: session)));
+    await tester.pumpWidget(MaterialApp(home: LoginScreen(session: session, animateBackground: false)));
 
     expect(find.text('Email'), findsOneWidget);
     expect(find.text('Password'), findsOneWidget);

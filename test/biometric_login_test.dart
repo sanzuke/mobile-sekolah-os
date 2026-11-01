@@ -126,7 +126,7 @@ void main() {
   testWidgets('login screen shows the biometric button only when enabled',
       (tester) async {
     await signInAndEnable();
-    await tester.pumpWidget(MaterialApp(home: LoginScreen(session: session)));
+    await tester.pumpWidget(MaterialApp(home: LoginScreen(session: session, animateBackground: false)));
     expect(find.text('Masuk dengan biometrik'), findsOneWidget);
 
     await session.disableBiometric();
