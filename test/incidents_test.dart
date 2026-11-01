@@ -67,6 +67,7 @@ class _Api {
     _incident(id: 4, status: 'resolved', canEdit: false, category: 'medical'),
   ];
   Map<String, dynamic>? detail;
+  int extraStudents = 0;
   http.Response Function(http.Request)? save;
 
   http.Request? last(String method, String suffix) =>
@@ -97,6 +98,13 @@ class _Api {
               'nis': '100002',
               'grade': {'id': 9, 'name': '8A'},
             },
+            for (var n = 0; n < extraStudents; n++)
+              {
+                'id': 100 + n,
+                'name': 'Siswa Tambahan $n',
+                'nis': '9${100 + n}',
+                'grade': {'id': 9, 'name': '8B'},
+              },
           ], 200);
         }
         if (path.endsWith('/cancel')) {
@@ -249,7 +257,7 @@ void main() {
         );
 
         expect(find.text('Dua siswa berkelahi di kantin.'), findsOneWidget);
-        expect(find.text('Ahmad Fauzi (8A)'), findsOneWidget);
+        expect(find.text('Ahmad Fauzi'), findsOneWidget);
         expect(find.textContaining('masih bisa mengubah'), findsOneWidget);
 
         await tester.tap(
@@ -327,7 +335,8 @@ void main() {
 
       await tester.tap(find.text('Tambah siswa'));
       await tester.pumpAndSettle();
-      expect(find.text('Ketik minimal 2 huruf'), findsOneWidget);
+      expect(find.text('Cari siswa'), findsOneWidget);
+      expect(find.textContaining('minimal 2 huruf'), findsOneWidget);
 
       await tester.enterText(
         find.widgetWithText(TextField, 'Cari nama atau NIS siswa'),
@@ -342,8 +351,37 @@ void main() {
       );
       await tester.pumpAndSettle();
       expect(find.text('Ahmad Fauzi'), findsOneWidget);
-      expect(find.text('8A · NIS 100001'), findsOneWidget);
+      expect(find.text('Kelas 8A'), findsNWidgets(2)); // both results are in 8A
+      expect(find.text('NIS 100001'), findsOneWidget);
+      expect(find.text('2 siswa ditemukan'), findsOneWidget);
     });
+
+    testWidgets(
+      'a full page of results says it is only the first ones, and added students are not offered twice',
+      (tester) async {
+        final api = _Api()
+          ..extraStudents = 18; // 2 + 18 = the server's cap of 20
+        await _pump(tester, _formHost(api));
+        await _openForm(tester);
+
+        await _pickStudent(tester, 'ah', 'Ahmad Fauzi');
+        await tester.tap(find.text('Tambah siswa'));
+        await tester.pumpAndSettle();
+        await tester.enterText(
+          find.widgetWithText(TextField, 'Cari nama atau NIS siswa'),
+          'sis',
+        );
+        await tester.pumpAndSettle();
+
+        expect(
+          find.textContaining('Menampilkan 20 hasil pertama'),
+          findsOneWidget,
+        );
+        expect(find.text('20 siswa ditemukan'), findsNothing);
+        // Ahmad is already on the report: shown with a check, not offered again.
+        expect(find.byIcon(Icons.check_circle), findsOneWidget);
+      },
+    );
 
     testWidgets(
       'confirms the route, then sends the report with the chosen students',

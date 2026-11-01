@@ -4,6 +4,7 @@ import '../models/incident_models.dart';
 import '../services/api_client.dart';
 import '../services/teacher_service.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/student_initials.dart';
 import 'incident_form_screen.dart';
 import 'incidents_screen.dart';
 
@@ -146,65 +147,75 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
   }
 
   Widget _content(StudentIncident i) {
-    final text = Theme.of(context).textTheme;
     return RefreshIndicator(
       onRefresh: _load,
       child: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
         children: [
-          Wrap(
-            spacing: 8,
-            runSpacing: 4,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: [
-              IncidentStatusChip(status: i.status, label: i.statusLabel),
-              Text(
-                '${i.categoryLabel} · ${i.severityLabel}',
-                style: text.bodyMedium,
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            incidentWhen(i.occurredAt),
-            style: text.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-          ),
-          if ((i.location ?? '').isNotEmpty)
-            Text(i.location!, style: text.bodyMedium),
+          _Header(incident: i),
+          const SizedBox(height: 12),
+          if (i.status == 'cancelled')
+            const _Banner(
+              Icons.block,
+              'Laporan ini dibatalkan oleh pelapor.',
+              Color(0xFFF1F5F9),
+              Color(0xFF475569),
+            )
+          else
+            _StatusSteps(status: i.status),
           if (i.canEdit) ...[
             const SizedBox(height: 12),
-            const _Note(
-              'Laporan ini belum diambil. Anda masih bisa mengubah atau membatalkannya.',
+            const _Banner(
+              Icons.edit_outlined,
+              'Belum diambil BK/UKS. Anda masih bisa mengubah atau membatalkan laporan ini.',
               Color(0xFFFEF3E2),
               Color(0xFF92400E),
             ),
           ],
           if ((i.publicNote ?? '').isNotEmpty) ...[
-            const _Heading('Tindakan dari penangan'),
-            _Note(
-              i.publicNote!,
-              const Color(0xFFD5EDEA),
-              const Color(0xFF0F766E),
+            const SizedBox(height: 16),
+            _Section(
+              icon: Icons.verified_outlined,
+              title: 'Tindakan dari penangan',
+              tint: const Color(0xFFD5EDEA),
+              child: Text(
+                i.publicNote!,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
             ),
           ],
-          const _Heading('Siswa'),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            children: [
-              for (final s in i.students)
-                Chip(
-                  label: Text(
-                    s.gradeName == null ? s.name : '${s.name} (${s.gradeName})',
-                  ),
-                ),
-            ],
+          const SizedBox(height: 16),
+          _Section(
+            icon: Icons.groups_outlined,
+            title: 'Siswa terlibat (${i.students.length})',
+            child: Column(
+              children: [
+                for (var n = 0; n < i.students.length; n++) ...[
+                  if (n > 0) const Divider(height: 16),
+                  _StudentRow(student: i.students[n]),
+                ],
+              ],
+            ),
           ),
-          const _Heading('Kronologi'),
-          Text(i.description ?? '', style: text.bodyMedium),
+          const SizedBox(height: 16),
+          _Section(
+            icon: Icons.notes_outlined,
+            title: 'Kronologi',
+            child: Text(
+              i.description ?? '',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ),
           if ((i.actionTaken ?? '').isNotEmpty) ...[
-            const _Heading('Tindakan awal'),
-            Text(i.actionTaken!, style: text.bodyMedium),
+            const SizedBox(height: 16),
+            _Section(
+              icon: Icons.healing_outlined,
+              title: 'Tindakan awal oleh pelapor',
+              child: Text(
+                i.actionTaken!,
+                style: Theme.of(context).textTheme.bodyLarge,
+              ),
+            ),
           ],
         ],
       ),
@@ -212,25 +223,242 @@ class _IncidentDetailScreenState extends State<IncidentDetailScreen> {
   }
 }
 
-class _Heading extends StatelessWidget {
-  const _Heading(this.label);
+/// Colours of a report's route: amber for discipline, red for medical.
+({Color bg, Color fg}) incidentTone(bool medical) => medical
+    ? (bg: const Color(0xFFFEE2E2), fg: const Color(0xFFB91C1C))
+    : (bg: const Color(0xFFFEF3E2), fg: const Color(0xFF92400E));
 
+class _Header extends StatelessWidget {
+  const _Header({required this.incident});
+
+  final StudentIncident incident;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    final tone = incidentTone(incident.isMedical);
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [tone.bg, Colors.white],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: tone.bg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 52,
+                height: 52,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Icon(
+                  incident.isMedical
+                      ? Icons.favorite_border
+                      : Icons.warning_amber_rounded,
+                  color: tone.fg,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      incident.categoryLabel,
+                      style: text.titleLarge?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: tone.fg,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 4,
+                      children: [
+                        _Pill(
+                          'Tingkat ${incident.severityLabel.toLowerCase()}',
+                          Colors.white,
+                          tone.fg,
+                        ),
+                        IncidentStatusChip(
+                          status: incident.status,
+                          label: incident.statusLabel,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          _InfoRow(Icons.schedule, incidentWhen(incident.occurredAt)),
+          if ((incident.location ?? '').isNotEmpty) ...[
+            const SizedBox(height: 6),
+            _InfoRow(Icons.place_outlined, incident.location!),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow(this.icon, this.label);
+
+  final IconData icon;
   final String label;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(top: 20, bottom: 8),
+  Widget build(BuildContext context) => Row(
+    children: [
+      Icon(icon, size: 18, color: const Color(0xFF475569)),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
+      ),
+    ],
+  );
+}
+
+class _Pill extends StatelessWidget {
+  const _Pill(this.label, this.bg, this.fg);
+
+  final String label;
+  final Color bg;
+  final Color fg;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(999),
+    ),
     child: Text(
       label,
-      style: Theme.of(context).textTheme.titleSmall
-          ?.copyWith(fontWeight: FontWeight.w800),
+      style: TextStyle(color: fg, fontSize: 12, fontWeight: FontWeight.w700),
     ),
   );
 }
 
-class _Note extends StatelessWidget {
-  const _Note(this.message, this.bg, this.fg);
+/// Where the report stands: reported, being handled, resolved. Three equal
+/// columns with a line through the dots, so it fits any width or text size.
+class _StatusSteps extends StatelessWidget {
+  const _StatusSteps({required this.status});
 
+  final String status;
+
+  static const _steps = [
+    ('reported', 'Dilaporkan'),
+    ('handling', 'Ditangani'),
+    ('resolved', 'Selesai'),
+  ];
+  static const _done = Color(0xFF0F766E);
+  static const _todo = Color(0xFFCBD5E1);
+  static const _dot = 26.0;
+
+  @override
+  Widget build(BuildContext context) {
+    final current = _steps.indexWhere((s) => s.$1 == status);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFE2E8F0)),
+      ),
+      child: Stack(
+        children: [
+          // The line runs from the first dot's centre to the last one's.
+          Positioned.fill(
+            child: LayoutBuilder(
+              builder: (context, box) {
+                final inset = box.maxWidth / 6;
+                final span = box.maxWidth - 2 * inset;
+                final reached = current <= 0
+                    ? 0.0
+                    : current / (_steps.length - 1);
+                return Stack(
+                  children: [
+                    Positioned(
+                      left: inset,
+                      top: _dot / 2 - 1,
+                      width: span,
+                      child: Container(height: 2, color: _todo),
+                    ),
+                    Positioned(
+                      left: inset,
+                      top: _dot / 2 - 1,
+                      width: span * reached,
+                      child: Container(height: 2, color: _done),
+                    ),
+                  ],
+                );
+              },
+            ),
+          ),
+          Row(
+            children: [
+              for (var n = 0; n < _steps.length; n++)
+                Expanded(child: _dotAt(n, current)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _dotAt(int n, int current) {
+    final reached = n <= current;
+    return Column(
+      children: [
+        Container(
+          width: _dot,
+          height: _dot,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: reached ? _done : Colors.white,
+            border: Border.all(color: reached ? _done : _todo, width: 2),
+          ),
+          child: reached
+              ? const Icon(Icons.check, size: 16, color: Colors.white)
+              : null,
+        ),
+        const SizedBox(height: 4),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Text(
+            _steps[n].$2,
+            maxLines: 1,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: n == current ? FontWeight.w800 : FontWeight.w500,
+              color: reached
+                  ? const Color(0xFF0F172A)
+                  : const Color(0xFF64748B),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _Banner extends StatelessWidget {
+  const _Banner(this.icon, this.message, this.bg, this.fg);
+
+  final IconData icon;
   final String message;
   final Color bg;
   final Color fg;
@@ -242,6 +470,88 @@ class _Note extends StatelessWidget {
       color: bg,
       borderRadius: BorderRadius.circular(12),
     ),
-    child: Text(message, style: TextStyle(color: fg, fontSize: 13)),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, size: 18, color: fg),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(message, style: TextStyle(color: fg, fontSize: 13)),
+        ),
+      ],
+    ),
+  );
+}
+
+/// A titled white card, like the other detail screens.
+class _Section extends StatelessWidget {
+  const _Section({
+    required this.icon,
+    required this.title,
+    required this.child,
+    this.tint,
+  });
+
+  final IconData icon;
+  final String title;
+  final Widget child;
+  final Color? tint;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: tint ?? Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: tint ?? const Color(0xFFE2E8F0)),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 18, color: const Color(0xFF0F766E)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                title,
+                style: Theme.of(context).textTheme.titleSmall
+                    ?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        child,
+      ],
+    ),
+  );
+}
+
+class _StudentRow extends StatelessWidget {
+  const _StudentRow({required this.student});
+
+  final IncidentStudent student;
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      StudentInitials(student.name),
+      const SizedBox(width: 12),
+      Expanded(
+        child: Text(
+          student.name,
+          style: Theme.of(context).textTheme.bodyLarge
+              ?.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ),
+      if (student.gradeName != null)
+        _Pill(
+          'Kelas ${student.gradeName}',
+          const Color(0xFFD5EDEA),
+          const Color(0xFF0F766E),
+        ),
+    ],
   );
 }

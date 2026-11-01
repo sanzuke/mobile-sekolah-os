@@ -4,6 +4,7 @@ import '../models/incident_models.dart';
 import '../services/api_client.dart';
 import '../services/teacher_service.dart';
 import '../widgets/confirm_dialog.dart';
+import '../widgets/student_initials.dart';
 
 /// Opens the report form (new, or an [existing] one nobody has taken up yet).
 /// Returns the saved report, or null when the teacher backed out.
@@ -153,6 +154,7 @@ class _IncidentFormScreenState extends State<IncidentFormScreen> {
       builder: (_) => _StudentPicker(
         service: widget.service,
         onUnauthorized: widget.onUnauthorized,
+        selectedIds: {for (final s in _students) s.id},
       ),
     );
     if (s == null || _students.any((x) => x.id == s.id)) return;
@@ -459,16 +461,26 @@ class _Picker extends StatelessWidget {
 
 /// Search active students by name or NIS (two characters at least) and pick one.
 class _StudentPicker extends StatefulWidget {
-  const _StudentPicker({required this.service, required this.onUnauthorized});
+  const _StudentPicker({
+    required this.service,
+    required this.onUnauthorized,
+    required this.selectedIds,
+  });
 
   final TeacherService service;
   final VoidCallback onUnauthorized;
+
+  /// Students already on the report: shown, but not pickable twice.
+  final Set<int> selectedIds;
 
   @override
   State<_StudentPicker> createState() => _StudentPickerState();
 }
 
 class _StudentPickerState extends State<_StudentPicker> {
+  /// The most results the server returns for one search.
+  static const _serverLimit = 20;
+
   final _query = TextEditingController();
   List<IncidentStudent> _results = [];
   bool _loading = false;
@@ -510,13 +522,72 @@ class _StudentPickerState extends State<_StudentPicker> {
     if (mine == _seq && mounted) setState(() => _loading = false);
   }
 
+  Widget _message(IconData icon, String title, [String? hint]) => Center(
+    child: Padding(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 44, color: const Color(0xFF94A3B8)),
+          const SizedBox(height: 12),
+          Text(
+            title,
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.titleSmall
+                ?.copyWith(fontWeight: FontWeight.w700),
+          ),
+          if (hint != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              hint,
+              textAlign: TextAlign.center,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ],
+      ),
+    ),
+  );
+
+  Widget _body() {
+    final q = _query.text.trim();
+    if (_error != null) return _message(Icons.cloud_off_outlined, _error!);
+    if (q.length < 2) {
+      return _message(
+        Icons.person_search_outlined,
+        'Cari siswa',
+        'Ketik minimal 2 huruf dari nama atau NIS.',
+      );
+    }
+    if (_loading && _results.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_results.isEmpty) {
+      return _message(
+        Icons.search_off,
+        'Siswa tidak ditemukan',
+        'Coba nama lain atau periksa ejaannya.',
+      );
+    }
+    return ListView.separated(
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 12),
+      itemCount: _results.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 6),
+      itemBuilder: (_, n) => _StudentOption(
+        student: _results[n],
+        query: q,
+        picked: widget.selectedIds.contains(_results[n].id),
+        onTap: () => Navigator.pop(context, _results[n]),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final short = _query.text.trim().length < 2;
     return Padding(
       padding: EdgeInsets.only(bottom: MediaQuery.viewInsetsOf(context).bottom),
       child: SizedBox(
-        height: MediaQuery.sizeOf(context).height * 0.6,
+        height: MediaQuery.sizeOf(context).height * 0.7,
         child: Column(
           children: [
             Padding(
@@ -525,39 +596,157 @@ class _StudentPickerState extends State<_StudentPicker> {
                 controller: _query,
                 autofocus: true,
                 onChanged: _search,
-                decoration: const InputDecoration(
-                  prefixIcon: Icon(Icons.search),
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search),
                   hintText: 'Cari nama atau NIS siswa',
-                  border: OutlineInputBorder(),
+                  border: const OutlineInputBorder(),
+                  suffixIcon: _query.text.isEmpty
+                      ? null
+                      : IconButton(
+                          tooltip: 'Hapus',
+                          icon: const Icon(Icons.close),
+                          onPressed: () {
+                            _query.clear();
+                            _search('');
+                          },
+                        ),
                 ),
               ),
             ),
-            Expanded(
-              child: _error != null
-                  ? Center(child: Text(_error!))
-                  : short
-                  ? const Center(child: Text('Ketik minimal 2 huruf'))
-                  : _loading && _results.isEmpty
-                  ? const Center(child: CircularProgressIndicator())
-                  : _results.isEmpty
-                  ? const Center(child: Text('Siswa tidak ditemukan'))
-                  : ListView(
+            AnimatedSize(
+              duration: const Duration(milliseconds: 150),
+              child: _loading && _results.isNotEmpty
+                  ? const LinearProgressIndicator(minHeight: 2)
+                  : const SizedBox(height: 2),
+            ),
+            if (_results.isNotEmpty && _query.text.trim().length >= 2)
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    _results.length >= _serverLimit
+                        ? 'Menampilkan $_serverLimit hasil pertama. Ketik lebih lengkap untuk mempersempit.'
+                        : '${_results.length} siswa ditemukan',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ),
+            Expanded(child: _body()),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// One search result: avatar, name with the typed part in bold, class and NIS.
+class _StudentOption extends StatelessWidget {
+  const _StudentOption({
+    required this.student,
+    required this.query,
+    required this.picked,
+    required this.onTap,
+  });
+
+  final IncidentStudent student;
+  final String query;
+  final bool picked;
+  final VoidCallback onTap;
+
+  /// [name] with every occurrence of [query] (any case) in bold.
+  List<TextSpan> _highlight(String name, TextStyle? base) {
+    final lower = name.toLowerCase();
+    final needle = query.toLowerCase();
+    final spans = <TextSpan>[];
+    var from = 0;
+    while (needle.isNotEmpty) {
+      final at = lower.indexOf(needle, from);
+      if (at < 0) break;
+      if (at > from) spans.add(TextSpan(text: name.substring(from, at)));
+      spans.add(
+        TextSpan(
+          text: name.substring(at, at + needle.length),
+          style: const TextStyle(
+            fontWeight: FontWeight.w900,
+            color: Color(0xFF0F766E),
+          ),
+        ),
+      );
+      from = at + needle.length;
+    }
+    if (from < name.length) spans.add(TextSpan(text: name.substring(from)));
+    return spans;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Material(
+      color: picked ? const Color(0xFFF1F5F9) : Colors.white,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: const BorderSide(color: Color(0xFFE2E8F0)),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: picked ? null : onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Row(
+            children: [
+              StudentInitials(student.name),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text.rich(
+                      TextSpan(
+                        style: text.bodyLarge?.copyWith(
+                          fontWeight: FontWeight.w500,
+                        ),
+                        children: _highlight(student.name, text.bodyLarge),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Wrap(
+                      spacing: 8,
+                      runSpacing: 2,
+                      crossAxisAlignment: WrapCrossAlignment.center,
                       children: [
-                        for (final s in _results)
-                          ListTile(
-                            title: Text(s.name),
-                            subtitle: Text(
-                              [
-                                if (s.gradeName != null) s.gradeName!,
-                                if (s.nis != null) 'NIS ${s.nis}',
-                              ].join(' · '),
+                        if (student.gradeName != null)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
                             ),
-                            onTap: () => Navigator.pop(context, s),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFD5EDEA),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              'Kelas ${student.gradeName}',
+                              style: const TextStyle(
+                                color: Color(0xFF0F766E),
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
                           ),
+                        if (student.nis != null)
+                          Text('NIS ${student.nis}', style: text.bodySmall),
                       ],
                     ),
-            ),
-          ],
+                  ],
+                ),
+              ),
+              if (picked)
+                const Icon(Icons.check_circle, color: Color(0xFF0F766E))
+              else
+                const Icon(Icons.add_circle_outline, color: Color(0xFF64748B)),
+            ],
+          ),
         ),
       ),
     );
