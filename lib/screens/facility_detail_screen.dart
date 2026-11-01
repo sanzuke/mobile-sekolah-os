@@ -7,6 +7,7 @@ import '../widgets/confirm_dialog.dart';
 import 'facility_form_screen.dart';
 import 'facility_reports_screen.dart';
 import 'incidents_screen.dart' show incidentWhen;
+import '../widgets/one_line_label.dart';
 
 /// One report. While nobody has taken it up the reporter may change or withdraw
 /// it; afterwards it is read-only, with the handler's public note.
@@ -107,14 +108,14 @@ class _FacilityDetailScreenState extends State<FacilityDetailScreen> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: _busy ? null : _cancel,
-                        child: const Text('Batalkan laporan'),
+                        child: const OneLineLabel('Batalkan laporan'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
                         onPressed: _busy ? null : _edit,
-                        child: const Text('Ubah'),
+                        child: const OneLineLabel('Ubah'),
                       ),
                     ),
                   ],

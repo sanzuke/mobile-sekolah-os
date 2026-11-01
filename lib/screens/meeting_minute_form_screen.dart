@@ -5,6 +5,7 @@ import '../services/api_client.dart';
 import '../services/teacher_service.dart';
 import '../widgets/confirm_dialog.dart';
 import '../widgets/date_format.dart';
+import '../widgets/one_line_label.dart';
 
 /// Opens the minutes form (new, or [existing] draft). Returns the saved minutes,
 /// or null when the teacher backed out.
@@ -314,7 +315,7 @@ class _MeetingMinuteFormScreenState extends State<MeetingMinuteFormScreen> {
                 Expanded(
                   child: OutlinedButton(
                     onPressed: _busy ? null : () => _save(finalize: false),
-                    child: const Text('Simpan draft'),
+                    child: const OneLineLabel('Simpan draft'),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -327,7 +328,7 @@ class _MeetingMinuteFormScreenState extends State<MeetingMinuteFormScreen> {
                             width: 18,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : const Text('Finalkan'),
+                        : const OneLineLabel('Finalkan'),
                   ),
                 ),
               ],

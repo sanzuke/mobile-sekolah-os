@@ -97,8 +97,9 @@ void main() {
     });
   });
 
-  Future<void> pump(WidgetTester tester, {bool withBlocks = true}) async {
-    tester.view.physicalSize = const Size(1440, 3000);
+  /// [phone] is a real handset: 360 dp wide with the text a little larger than default.
+  Future<void> pump(WidgetTester tester, {bool withBlocks = true, bool phone = false}) async {
+    tester.view.physicalSize = phone ? const Size(720, 3200) : const Size(1440, 3000);
     tester.view.devicePixelRatio = 2.0;
     addTearDown(tester.view.reset);
 
@@ -181,6 +182,12 @@ void main() {
 
     await tester.pumpWidget(MaterialApp(
       theme: buildTheme(),
+      builder: (context, child) => phone
+          ? MediaQuery(
+              data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.15)),
+              child: child!,
+            )
+          : child!,
       home: Scaffold(
         body: SafeArea(
           child: ScheduleScreen(
@@ -203,6 +210,21 @@ void main() {
       expect(find.byKey(ValueKey('day-$day')), findsOneWidget, reason: 'chip $day');
     }
     expect(find.text('Sabtu, 31 Okt 2026'), findsOneWidget);
+  });
+
+  testWidgets('on a 360 dp phone the shortcut buttons keep their labels on one line', (tester) async {
+    await pump(tester, phone: true);
+
+    // A wrapped label ("Presens" / "i") is taller than a one-line one.
+    final oneLine = tester.getSize(find.text('RPP').first).height;
+    for (final label in ['Presensi', 'Jurnal', 'RPP']) {
+      final labels = find.text(label).evaluate().toList();
+      expect(labels, isNotEmpty, reason: label);
+      for (final e in labels) {
+        expect(tester.getSize(find.byElementPredicate((x) => x == e)).height, oneLine,
+            reason: '$label wrapped');
+      }
+    }
   });
 
   testWidgets('back-to-back JP become one card with attendance state and shortcuts',

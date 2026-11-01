@@ -7,6 +7,7 @@ import '../widgets/confirm_dialog.dart';
 import 'incidents_screen.dart' show incidentWhen;
 import 'vehicle_form_screen.dart';
 import 'vehicle_requests_screen.dart';
+import '../widgets/one_line_label.dart';
 
 /// One request. While it waits the requester may change or withdraw it; once
 /// approved only withdraw (the vehicle is then released). Shows the vehicle and
@@ -111,7 +112,7 @@ class _VehicleDetailScreenState extends State<VehicleDetailScreen> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: _busy ? null : _cancel,
-                        child: const Text('Batalkan pengajuan'),
+                        child: const OneLineLabel('Batalkan pengajuan'),
                       ),
                     ),
                     if (r.canEdit) ...[
@@ -119,7 +120,7 @@ class _VehicleDetailScreenState extends State<VehicleDetailScreen> {
                       Expanded(
                         child: FilledButton(
                           onPressed: _busy ? null : _edit,
-                          child: const Text('Ubah'),
+                          child: const OneLineLabel('Ubah'),
                         ),
                       ),
                     ],

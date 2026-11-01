@@ -7,6 +7,7 @@ import '../widgets/confirm_dialog.dart';
 import '../widgets/date_format.dart';
 import 'meeting_minute_form_screen.dart';
 import 'meeting_minutes_screen.dart';
+import '../widgets/one_line_label.dart';
 
 /// One set of minutes. A draft can be edited, finalised or deleted by its
 /// author; a final one is read-only, except that tasks can be ticked.
@@ -194,14 +195,14 @@ class _MeetingMinuteDetailScreenState extends State<MeetingMinuteDetailScreen> {
                     Expanded(
                       child: OutlinedButton(
                         onPressed: _busy ? null : _edit,
-                        child: const Text('Ubah'),
+                        child: const OneLineLabel('Ubah'),
                       ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
                       child: FilledButton(
                         onPressed: _busy ? null : _finalize,
-                        child: const Text('Finalkan'),
+                        child: const OneLineLabel('Finalkan'),
                       ),
                     ),
                   ],

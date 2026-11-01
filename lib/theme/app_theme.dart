@@ -9,7 +9,8 @@ final _buttonShape = RoundedRectangleBorder(
   borderRadius: BorderRadius.circular(12),
 );
 const _buttonText = TextStyle(fontSize: 16, fontWeight: FontWeight.w600);
-const _buttonPadding = EdgeInsets.symmetric(horizontal: 24, vertical: 14);
+// 16 dp, not 24: two buttons side by side on a 360 dp phone still need room for their labels.
+const _buttonPadding = EdgeInsets.symmetric(horizontal: 16, vertical: 14);
 
 ThemeData buildTheme() {
   final scheme = ColorScheme.fromSeed(seedColor: kAccent);

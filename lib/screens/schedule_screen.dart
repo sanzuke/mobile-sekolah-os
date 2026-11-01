@@ -7,6 +7,7 @@ import '../widgets/async_view.dart';
 import '../widgets/date_format.dart';
 import '../widgets/surface_cards.dart';
 import 'lessons_screen.dart';
+import '../widgets/one_line_label.dart';
 
 const _dayShort = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 const _dayLong = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
@@ -391,33 +392,45 @@ class _SessionCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: live ? scheme.primary : scheme.primary.withValues(alpha: done ? 0.06 : 0.12),
-                    borderRadius: BorderRadius.circular(20),
+                // The left side wraps rather than overflows on a narrow phone or large text.
+                Expanded(
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 4,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: live
+                              ? scheme.primary
+                              : scheme.primary.withValues(alpha: done ? 0.06 : 0.12),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(group.jpLabel,
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w800,
+                                color: live ? Colors.white : scheme.primary)),
+                      ),
+                      if (live || group.status == 'next')
+                        Text(live ? 'Berlangsung' : 'Berikutnya',
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w700,
+                                color: scheme.primary))
+                      else if (done)
+                        const Text('Selesai',
+                            style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                    ],
                   ),
-                  child: Text(group.jpLabel,
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w800,
-                          color: live ? Colors.white : scheme.primary)),
                 ),
-                if (live || group.status == 'next') ...[
+                if (attendance != null) ...[
                   const SizedBox(width: 8),
-                  Text(live ? 'Berlangsung' : 'Berikutnya',
-                      style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: scheme.primary)),
-                ] else if (done) ...[
-                  const SizedBox(width: 8),
-                  const Text('Selesai',
-                      style: TextStyle(fontSize: 12, color: Color(0xFF64748B))),
+                  _AttendanceChip(attendance!),
                 ],
-                const Spacer(),
-                if (attendance != null) _AttendanceChip(attendance!),
               ],
             ),
             const SizedBox(height: 10),
@@ -437,7 +450,8 @@ class _SessionCard extends StatelessWidget {
                 Expanded(
                   child: FilledButton.tonal(
                     onPressed: recordable ? onPresensi : null,
-                    child: const Text('Presensi'),
+                    style: _shortcutStyle,
+                    child: const OneLineLabel('Presensi'),
                   ),
                 ),
                 const SizedBox(width: 8),
@@ -477,6 +491,13 @@ class _AttendanceChip extends StatelessWidget {
   }
 }
 
+/// Three shortcuts share one row, so each gets about a third of a 360 dp phone: tighter
+/// padding and a smaller label than the theme's, and [OneLineLabel] never wraps it.
+final _shortcutStyle = ButtonStyle(
+  padding: WidgetStateProperty.all(const EdgeInsets.symmetric(horizontal: 6, vertical: 14)),
+  textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+);
+
 /// Jurnal and RPP have no backend yet; they say so instead of doing nothing.
 class _SoonButton extends StatelessWidget {
   const _SoonButton(this.label);
@@ -494,8 +515,8 @@ class _SoonButton extends StatelessWidget {
       style: OutlinedButton.styleFrom(
         foregroundColor: const Color(0xFF64748B),
         side: const BorderSide(color: Color(0xFFCBD5E1)),
-      ),
-      child: Text(label),
+      ).merge(_shortcutStyle),
+      child: OneLineLabel(label),
     );
   }
 }
