@@ -11,6 +11,7 @@ import '../state/session_controller.dart';
 import 'account_screen.dart';
 import 'home_screen.dart';
 import 'inbox_screen.dart';
+import 'facility_detail_screen.dart';
 import 'leave_detail_screen.dart';
 import 'incident_detail_screen.dart';
 import 'meeting_minute_detail_screen.dart';
@@ -125,6 +126,12 @@ class _AppShellState extends State<AppShell> {
               service: widget.service,
               onUnauthorized: widget.session.logout,
               id: m.leaveRequestId!)));
+    } else if (m.type == 'facility_report' && m.facilityReportId != null) {
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (_) => FacilityDetailScreen(
+              service: widget.service,
+              onUnauthorized: widget.session.logout,
+              id: m.facilityReportId!)));
     } else if (m.type == 'student_incident' && m.studentIncidentId != null) {
       Navigator.of(context).push(MaterialPageRoute(
           builder: (_) => IncidentDetailScreen(

@@ -1,5 +1,6 @@
 import 'package:http/http.dart' as http;
 
+import '../models/facility_models.dart';
 import '../models/incident_models.dart';
 import '../models/leave_models.dart';
 import '../models/meeting_models.dart';
@@ -296,6 +297,37 @@ class TeacherService {
   Future<StudentIncident> cancelIncident(int id) async =>
       StudentIncident.fromJson(
           await _client.post('/v1/teacher/incidents/$id/cancel')
+              as Map<String, dynamic>);
+
+  Future<FacilityReportPage> facilityReports({String? status, int page = 1}) async {
+    final res = await _client.getEnvelope('/v1/teacher/facility-reports',
+        query: {'page': '$page', 'per_page': '20', 'status': ?status});
+    final meta = res['meta'] as Map<String, dynamic>;
+    return FacilityReportPage(
+      items: (res['data'] as List<dynamic>)
+          .map((e) => FacilityReport.fromJson(e as Map<String, dynamic>))
+          .toList(),
+      lastPage: meta['last_page'] as int? ?? 1,
+    );
+  }
+
+  Future<FacilityReport> facilityReport(int id) async =>
+      FacilityReport.fromJson(
+          await _client.get('/v1/teacher/facility-reports/$id')
+              as Map<String, dynamic>);
+
+  /// Files the report, or replaces a still-`reported` one when [id] is given.
+  Future<FacilityReport> saveFacilityReport(Map<String, dynamic> body,
+      {int? id}) async {
+    final data = id == null
+        ? await _client.post('/v1/teacher/facility-reports', body: body)
+        : await _client.put('/v1/teacher/facility-reports/$id', body: body);
+    return FacilityReport.fromJson(data as Map<String, dynamic>);
+  }
+
+  Future<FacilityReport> cancelFacilityReport(int id) async =>
+      FacilityReport.fromJson(
+          await _client.post('/v1/teacher/facility-reports/$id/cancel')
               as Map<String, dynamic>);
 
   /// Registers this phone for push (`token` is the FCM registration token).

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../models/leave_models.dart';
 import 'leave_detail_screen.dart';
 import 'leave_form_screen.dart';
+import 'facility_detail_screen.dart';
+import 'facility_form_screen.dart';
 import 'incident_detail_screen.dart';
 import 'incident_form_screen.dart';
 import 'meeting_minute_detail_screen.dart';
@@ -40,7 +42,7 @@ const _quick = [
   _Quick(
     'facility',
     'Lapor sarana prasarana',
-    'Fasilitas atau kendaraan rusak',
+    'Fasilitas sekolah rusak atau bermasalah',
     Icons.build_outlined,
     Color(0xFFFEF3E2),
     Color(0xFF92400E),
@@ -122,7 +124,21 @@ Future<void> _openIncidentForm(
           id: saved.id)));
 }
 
-/// The "+" in the middle of the bottom bar. Izin / cuti, notulen and kejadian siswa are live; the others have
+/// "Lapor sarana prasarana": the form, then the report that was just filed.
+Future<void> _openFacilityForm(
+    BuildContext context, ShellActions actions) async {
+  final navigator = Navigator.of(context);
+  final saved =
+      await openFacilityForm(context, actions.service, actions.onUnauthorized);
+  if (saved == null) return;
+  await navigator.push(MaterialPageRoute(
+      builder: (_) => FacilityDetailScreen(
+          service: actions.service,
+          onUnauthorized: actions.onUnauthorized,
+          id: saved.id)));
+}
+
+/// The "+" in the middle of the bottom bar. Izin / cuti, notulen, kejadian siswa and sarpras are live; the others have
 /// no backend yet, so each says it is coming rather than pretending to work.
 Future<void> showQuickActions(BuildContext context, ShellActions actions) {
   final messenger = ScaffoldMessenger.of(context);
@@ -168,6 +184,10 @@ Future<void> showQuickActions(BuildContext context, ShellActions actions) {
                   }
                   if (q.id == 'incident') {
                     _openIncidentForm(context, actions);
+                    return;
+                  }
+                  if (q.id == 'facility') {
+                    _openFacilityForm(context, actions);
                     return;
                   }
                   if (q.id == 'minutes') {

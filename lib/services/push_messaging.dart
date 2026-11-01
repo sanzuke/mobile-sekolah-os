@@ -10,6 +10,7 @@ class PushMessage {
       this.leaveRequestId,
       this.meetingMinuteId,
       this.studentIncidentId,
+      this.facilityReportId,
       this.notificationId});
 
   /// `leave_request` or `meeting_minute` (more later).
@@ -17,6 +18,7 @@ class PushMessage {
   final int? leaveRequestId;
   final int? meetingMinuteId;
   final int? studentIncidentId;
+  final int? facilityReportId;
 
   /// The in-app notification this push mirrors (to mark it read when opened).
   final String? notificationId;
@@ -26,6 +28,7 @@ class PushMessage {
         leaveRequestId: int.tryParse('${data['leave_request_id'] ?? ''}'),
         meetingMinuteId: int.tryParse('${data['meeting_minute_id'] ?? ''}'),
         studentIncidentId: int.tryParse('${data['student_incident_id'] ?? ''}'),
+        facilityReportId: int.tryParse('${data['facility_report_id'] ?? ''}'),
         notificationId: data['notification_id'] as String?,
       );
 }
