@@ -191,7 +191,8 @@ final List<MenuEntry> menuEntries = [
       id: 'laporan_saya',
       label: 'Laporan Saya',
       icon: Icons.insert_chart_outlined,
-      group: MenuGroup.laporan),
+      group: MenuGroup.laporan,
+      inboxSegment: kInboxReports),
 ];
 
 MenuEntry menuEntry(String id) => menuEntries.firstWhere((e) => e.id == id);

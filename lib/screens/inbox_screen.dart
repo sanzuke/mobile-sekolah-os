@@ -7,6 +7,7 @@ import '../services/teacher_service.dart';
 import '../widgets/async_view.dart';
 import '../widgets/surface_cards.dart';
 import 'announcement_detail_screen.dart';
+import 'my_reports.dart';
 import 'notification_list.dart';
 import 'shell_actions.dart';
 
@@ -21,6 +22,7 @@ class InboxScreen extends StatefulWidget {
     required this.onUnauthorized,
     this.notificationsRefresh,
     this.segmentRequest,
+    this.onCreateReport,
   });
 
   final TeacherService service;
@@ -34,12 +36,18 @@ class InboxScreen extends StatefulWidget {
   /// it is consumed (reset to -1) so asking for the same segment again works.
   final ValueNotifier<int>? segmentRequest;
 
+  /// "Buat laporan" on the empty Laporan tab; opens Aksi cepat.
+  final VoidCallback? onCreateReport;
+
   @override
   State<InboxScreen> createState() => _InboxScreenState();
 }
 
 class _InboxScreenState extends State<InboxScreen> {
   int _segment = kInboxAnnouncements;
+
+  /// Bumped each time the Laporan tab is shown, which is when it (re)loads.
+  final ValueNotifier<int> _reportsReload = ValueNotifier<int>(0);
 
   @override
   void initState() {
@@ -50,6 +58,7 @@ class _InboxScreenState extends State<InboxScreen> {
   @override
   void dispose() {
     widget.segmentRequest?.removeListener(_onSegmentRequest);
+    _reportsReload.dispose();
     super.dispose();
   }
 
@@ -58,7 +67,12 @@ class _InboxScreenState extends State<InboxScreen> {
     if (request == null || request.value < 0) return;
     final segment = request.value;
     request.value = -1;
+    _select(segment);
+  }
+
+  void _select(int segment) {
     setState(() => _segment = segment);
+    if (segment == kInboxReports) _reportsReload.value++;
   }
 
   @override
@@ -79,7 +93,7 @@ class _InboxScreenState extends State<InboxScreen> {
           child: _SegmentPills(
             selected: _segment,
             unread: widget.unread,
-            onSelect: (i) => setState(() => _segment = i),
+            onSelect: _select,
           ),
         ),
         Expanded(
@@ -94,7 +108,11 @@ class _InboxScreenState extends State<InboxScreen> {
                   unread: widget.unread,
                   onUnauthorized: widget.onUnauthorized,
                   refreshSignal: widget.notificationsRefresh),
-              const _ReportsEmpty(),
+              MyReportsList(
+                  service: widget.service,
+                  onUnauthorized: widget.onUnauthorized,
+                  reload: _reportsReload,
+                  onCreate: widget.onCreateReport),
             ],
           ),
         ),
@@ -191,32 +209,6 @@ class _SegmentPills extends StatelessWidget {
           ],
         ],
       ),
-    );
-  }
-}
-
-/// "Laporan" (kejadian siswa, sarpras, kendaraan) has no backend yet.
-class _ReportsEmpty extends StatelessWidget {
-  const _ReportsEmpty();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      children: [
-        EmptyState(
-          icon: Icons.insert_chart_outlined,
-          title: 'Belum ada laporan',
-          message:
-              'Laporan yang Anda kirim akan muncul di sini beserta status dan balasan staf.',
-          actionLabel: 'Buat laporan',
-          onAction: () {
-            ScaffoldMessenger.of(context)
-              ..hideCurrentSnackBar()
-              ..showSnackBar(const SnackBar(
-                  content: Text('Buat laporan akan segera hadir')));
-          },
-        ),
-      ],
     );
   }
 }

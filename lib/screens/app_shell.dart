@@ -209,6 +209,7 @@ class _AppShellState extends State<AppShell> {
         onUnauthorized: widget.session.logout,
         segmentRequest: _inboxSegment,
         notificationsRefresh: _notificationsVersion,
+        onCreateReport: () => showQuickActions(context, _actions),
       ),
       AccountScreen(
         teacher: widget.session.teacher!,

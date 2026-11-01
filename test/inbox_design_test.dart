@@ -25,6 +25,7 @@ Future<List<String>> _pump(
   int unread = 0,
   ValueNotifier<int>? unreadNotifier,
   ValueNotifier<int>? segmentRequest,
+  VoidCallback? onCreateReport,
 }) async {
   // Wide enough for the test font (Ahem is far wider than the real font).
   tester.view.physicalSize = const Size(1440, 2400);
@@ -44,6 +45,13 @@ Future<List<String>> _pump(
       } else if (path.endsWith('/notifications')) {
         data = notifications;
         meta = {'last_page': 1, 'unread_count': unread};
+      } else if (path.endsWith('/leave-requests') ||
+          path.endsWith('/incidents') ||
+          path.endsWith('/facility-reports') ||
+          path.endsWith('/vehicle-requests')) {
+        // The Laporan tab merges these four; none of them has anything here.
+        data = <Object>[];
+        meta = {'last_page': 1, 'pending_count': 0};
       }
       return http.Response(
           jsonEncode({'data': data, 'meta': meta, 'errors': null}), 200,
@@ -60,6 +68,7 @@ Future<List<String>> _pump(
           unread: unreadNotifier ?? ValueNotifier<int>(unread),
           onUnauthorized: () {},
           segmentRequest: segmentRequest,
+          onCreateReport: onCreateReport,
         ),
       ),
     ),
@@ -141,19 +150,19 @@ void main() {
         findsOneWidget);
   });
 
-  testWidgets('Laporan is an honest empty state with a "coming soon" action',
+  testWidgets('Laporan with nothing filed is an empty state that offers to create a report',
       (tester) async {
-    await _pump(tester);
+    var created = 0;
+    await _pump(tester, onCreateReport: () => created++);
 
     await tester.tap(find.byKey(const ValueKey('inbox-segment-2')));
     await tester.pumpAndSettle();
 
     expect(find.text('Belum ada laporan'), findsOneWidget);
-    expect(find.textContaining('beserta status dan balasan staf'), findsOneWidget);
+    expect(find.textContaining('akan muncul di sini beserta statusnya'), findsOneWidget);
 
     await tester.tap(find.text('Buat laporan'));
-    await tester.pump();
-    expect(find.text('Buat laporan akan segera hadir'), findsOneWidget);
+    expect(created, 1);
   });
 
   testWidgets('a big unread count is shown as 9+ on the Notifikasi pill',
