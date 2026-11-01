@@ -255,10 +255,18 @@ class HomeData {
     required this.announcements,
     this.unreadNotifications = 0,
     this.attendanceDuty,
+    this.journalDuty,
+    this.journalDutyReported = false,
   });
 
   final int unreadNotifications;
   final WeekDuty? attendanceDuty;
+
+  /// The week's journal progress; null when the server does not report it (or there is no semester).
+  final WeekDuty? journalDuty;
+
+  /// Whether the server reports a journal duty at all (an older server does not).
+  final bool journalDutyReported;
   final String date;
   final String? dayName;
   final String? semesterName;
@@ -299,6 +307,12 @@ class HomeData {
         final Map<String, dynamic> a => WeekDuty.fromJson(a),
         _ => null,
       },
+      journalDuty: switch ((j['duties'] as Map<String, dynamic>?)?['journal']) {
+        final Map<String, dynamic> a => WeekDuty.fromJson(a),
+        _ => null,
+      },
+      journalDutyReported:
+          (j['duties'] as Map<String, dynamic>?)?.containsKey('journal') ?? false,
     );
   }
 }
@@ -595,6 +609,8 @@ class LessonClass {
     required this.submitted,
     this.present = 0,
     this.total = 0,
+    this.journalSubmitted = false,
+    this.journalTopic,
   });
 
   final int scheduleId;
@@ -604,8 +620,13 @@ class LessonClass {
   final int present;
   final int total;
 
+  /// Whether this class-JP has a teaching journal, and its topic.
+  final bool journalSubmitted;
+  final String? journalTopic;
+
   factory LessonClass.fromJson(Map<String, dynamic> j) {
     final a = j['attendance'] as Map<String, dynamic>? ?? const {};
+    final journal = j['journal'] as Map<String, dynamic>? ?? const {};
     return LessonClass(
       scheduleId: j['schedule_id'] as int,
       gradeId: j['grade_id'] as int,
@@ -615,6 +636,8 @@ class LessonClass {
       present: ((a['present'] as num?) ?? 0).toInt() +
           ((a['late'] as num?) ?? 0).toInt(),
       total: ((a['total'] as num?) ?? 0).toInt(),
+      journalSubmitted: journal['state'] == 'submitted',
+      journalTopic: journal['topic'] as String?,
     );
   }
 }
@@ -689,6 +712,8 @@ class BlockSession {
     required this.submitted,
     required this.present,
     required this.total,
+    this.journalSubmitted = false,
+    this.journalTopic,
   });
 
   final int scheduleId;
@@ -698,6 +723,8 @@ class BlockSession {
   final bool submitted;
   final int present;
   final int total;
+  final bool journalSubmitted;
+  final String? journalTopic;
 }
 
 /// Flattens `/lessons` to per-class entries and merges back-to-back JP of the
@@ -732,6 +759,8 @@ List<LessonBlock> buildLessonBlocks(List<LessonItem> lessons) {
               submitted: c.submitted,
               present: c.present,
               total: c.total,
+              journalSubmitted: c.journalSubmitted,
+              journalTopic: c.journalTopic,
             ),
         ],
       ));

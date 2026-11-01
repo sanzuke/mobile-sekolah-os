@@ -32,6 +32,7 @@ Map<String, dynamic> _cls(int scheduleId, int gradeId, String name, {bool submit
       'attendance': submitted
           ? {'state': 'submitted', 'present': 26, 'late': 0, 'total': 28}
           : {'state': 'pending'},
+      'journal': {'state': 'pending', 'topic': null},
     };
 
 void main() {
@@ -245,9 +246,15 @@ void main() {
     expect(find.text('Jurnal'), findsNWidgets(2));
     expect(find.text('RPP'), findsNWidgets(2));
 
-    await tester.tap(find.text('Jurnal').first);
-    await tester.pump();
-    expect(find.text('Jurnal akan segera hadir'), findsOneWidget);
+    // Each card says whether its journal is written; here neither is.
+    expect(find.text('Belum jurnal'), findsNWidgets(2));
+
+    // Jurnal is a real button now: it opens the form for that lesson.
+    await tester.tap(find.widgetWithText(OutlinedButton, 'Jurnal').first);
+    await tester.pumpAndSettle();
+    expect(find.text('Jurnal akan segera hadir'), findsNothing);
+    expect(find.text('Jurnal mengajar'), findsOneWidget);
+    expect(find.text('Musthalah Hadits'), findsOneWidget);
   });
 
   testWidgets('another day shows its own lessons; a day without school says so',

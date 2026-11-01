@@ -2,6 +2,7 @@ import 'package:http/http.dart' as http;
 
 import '../models/facility_models.dart';
 import '../models/incident_models.dart';
+import '../models/journal_models.dart';
 import '../models/leave_models.dart';
 import '../models/meeting_models.dart';
 import '../models/teacher_models.dart';
@@ -368,6 +369,22 @@ class TeacherService {
       VehicleRequest.fromJson(
           await _client.post('/v1/teacher/vehicle-requests/$id/cancel')
               as Map<String, dynamic>);
+
+  /// The stored journal of one class-JP on [date] (`YYYY-MM-DD`), and whether it can still be written.
+  Future<LessonJournalData> lessonJournal(int scheduleId, String date) async =>
+      LessonJournalData.fromJson(await _client.get(
+          '/v1/teacher/schedules/$scheduleId/journal',
+          query: {'date': date}) as Map<String, dynamic>);
+
+  /// Creates or replaces the journal of one class-JP; the server upserts, so resending is safe.
+  Future<void> saveLessonJournal(
+          int scheduleId, String date, Map<String, dynamic> body) =>
+      _client.put('/v1/teacher/schedules/$scheduleId/journal',
+          body: {'date': date, ...body});
+
+  Future<void> deleteLessonJournal(int scheduleId, String date) =>
+      _client.delete('/v1/teacher/schedules/$scheduleId/journal',
+          body: {'date': date});
 
   /// Registers this phone for push (`token` is the FCM registration token).
   Future<void> registerDevice(String token) async {

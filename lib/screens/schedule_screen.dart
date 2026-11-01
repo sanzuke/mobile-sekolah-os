@@ -7,7 +7,10 @@ import '../widgets/async_view.dart';
 import '../widgets/date_format.dart';
 import '../widgets/surface_cards.dart';
 import 'lessons_screen.dart';
+import '../models/journal_models.dart';
 import '../widgets/one_line_label.dart';
+import 'journal_form_screen.dart';
+import 'journal_lessons_screen.dart' show JournalChip;
 
 const _dayShort = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
 const _dayLong = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu', 'Minggu'];
@@ -348,7 +351,19 @@ class _SessionsState extends State<_Sessions> {
           _SessionCard(
             group: g,
             attendance: _blocks == null ? null : attendanceForGroup(g, _blocks!),
+            journal: _blocks == null ? null : journalForGroup(g, _blocks!),
             recordable: widget.recordable,
+            onJurnal: (target) async {
+              await Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => JournalFormScreen(
+                  service: widget.service,
+                  onUnauthorized: widget.onUnauthorized,
+                  target: target,
+                  date: widget.iso,
+                ),
+              ));
+              if (mounted) _loadAttendance(); // refreshes the journal chip too
+            },
             onPresensi: () async {
               await Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => LessonsScreen(
@@ -369,14 +384,20 @@ class _SessionCard extends StatelessWidget {
   const _SessionCard({
     required this.group,
     required this.attendance,
+    required this.journal,
     required this.recordable,
     required this.onPresensi,
+    required this.onJurnal,
   });
 
   final LessonGroup group;
   final ({String state, String? summary})? attendance;
+
+  /// What the journal covers and whether it is written; null until the day's lessons have loaded.
+  final JournalTarget? journal;
   final bool recordable;
   final VoidCallback onPresensi;
+  final void Function(JournalTarget target) onJurnal;
 
   @override
   Widget build(BuildContext context) {
@@ -444,6 +465,10 @@ class _SessionCard extends StatelessWidget {
               [group.classes, group.timeRange, ?group.room].join(' · '),
               style: text.bodyMedium,
             ),
+            if (recordable && journal != null) ...[
+              const SizedBox(height: 8),
+              Align(alignment: Alignment.centerLeft, child: JournalChip(journal!.state)),
+            ],
             const SizedBox(height: 12),
             Row(
               children: [
@@ -455,7 +480,13 @@ class _SessionCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Expanded(child: _SoonButton('Jurnal')),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: recordable && journal != null ? () => onJurnal(journal!) : null,
+                    style: _shortcutStyle,
+                    child: const OneLineLabel('Jurnal'),
+                  ),
+                ),
                 const SizedBox(width: 8),
                 const Expanded(child: _SoonButton('RPP')),
               ],

@@ -6,6 +6,7 @@ import 'inbox_screen.dart';
 import 'leave_requests_screen.dart';
 import 'facility_reports_screen.dart';
 import 'incidents_screen.dart';
+import 'journal_lessons_screen.dart';
 import 'meeting_minutes_screen.dart';
 import 'vehicle_requests_screen.dart';
 import 'lessons_screen.dart';
@@ -84,11 +85,15 @@ final List<MenuEntry> menuEntries = [
       label: 'Kurikulum & RPP',
       icon: Icons.menu_book_outlined,
       group: MenuGroup.mengajar),
-  const MenuEntry(
+  MenuEntry(
       id: 'jurnal',
       label: 'Jurnal Mengajar',
       icon: Icons.edit_outlined,
-      group: MenuGroup.mengajar),
+      group: MenuGroup.mengajar,
+      page: (context, a) => JournalLessonsScreen(
+          service: a.service,
+          onUnauthorized: a.onUnauthorized,
+          date: _todayIso())),
   const MenuEntry(
       id: 'tahfidz',
       label: 'Tahfidz (IHQA)',

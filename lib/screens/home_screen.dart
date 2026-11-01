@@ -478,6 +478,7 @@ class _DutiesCard extends StatelessWidget {
     final text = Theme.of(context).textTheme;
     final week = data.week;
     final duty = data.attendanceDuty;
+    final journal = data.journalDuty;
     return Card(
       elevation: 0,
       color: Colors.white,
@@ -502,10 +503,28 @@ class _DutiesCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 14),
-            // RPP and Jurnal have no backend yet: shown as "Segera", never as a made-up 0%.
+            // RPP has no backend yet: shown as "Segera", never as a made-up 0%.
             const _DutyRow(label: 'RPP', value: 'Segera'),
             const SizedBox(height: 12),
-            const _DutyRow(label: 'Jurnal mengajar', value: 'Segera'),
+            // An older server does not report the journal duty at all: "Segera" until it does.
+            if (!data.journalDutyReported)
+              const _DutyRow(label: 'Jurnal mengajar', value: 'Segera')
+            else ...[
+              _DutyRow(
+                label: 'Jurnal mengajar',
+                value: journal?.percent == null ? '—' : '${journal!.percent}%',
+                progress: journal?.percent == null ? null : journal!.percent! / 100,
+                emphasis: (journal?.percent ?? 100) >= 50
+                    ? _Tone.normal
+                    : _Tone.warning,
+              ),
+              if (journal != null && journal.total > 0)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text('${journal.done} dari ${journal.total} JP kelas sudah ada jurnalnya',
+                      style: text.bodySmall),
+                ),
+            ],
             const SizedBox(height: 12),
             _DutyRow(
               label: 'Presensi siswa',

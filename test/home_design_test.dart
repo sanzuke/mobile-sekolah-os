@@ -19,6 +19,8 @@ Map<String, dynamic> _home({
   Map<String, dynamic>? next,
   int unread = 0,
   dynamic duty,
+  Map<String, dynamic>? journal,
+  bool reportJournal = false,
   List<Map<String, dynamic>> agenda = const [],
   List<Map<String, dynamic>> announcements = const [],
 }) =>
@@ -42,7 +44,7 @@ Map<String, dynamic> _home({
       'agenda': agenda,
       'announcements': announcements,
       'unread_notifications': unread,
-      'duties': {'attendance': duty},
+      'duties': {'attendance': duty, if (reportJournal) 'journal': journal},
     };
 
 Future<ApiClient> _pumpShell(WidgetTester tester, Map<String, dynamic> home) async {
@@ -115,6 +117,31 @@ void main() {
     // RPP and Jurnal have no backend: "Segera", never an invented 0%.
     expect(find.text('Segera'), findsNWidgets(2));
     expect(find.text('0%'), findsNothing);
+  });
+
+  testWidgets('Beranda shows the week\'s journal progress once the server reports it',
+      (tester) async {
+    await _pumpShell(
+        tester,
+        _home(
+            duty: {'done': 5, 'total': 6, 'percent': 83},
+            journal: {'done': 2, 'total': 4, 'percent': 50},
+            reportJournal: true));
+
+    expect(find.text('Jurnal mengajar'), findsOneWidget);
+    expect(find.text('50%'), findsOneWidget);
+    expect(find.text('2 dari 4 JP kelas sudah ada jurnalnya'), findsOneWidget);
+    // Only RPP is still "Segera".
+    expect(find.text('Segera'), findsOneWidget);
+  });
+
+  testWidgets('a journal duty with nothing due yet shows a dash, not a made-up 0%',
+      (tester) async {
+    await _pumpShell(tester, _home(reportJournal: true));
+
+    expect(find.text('Jurnal mengajar'), findsOneWidget);
+    expect(find.text('0%'), findsNothing);
+    expect(find.text('Segera'), findsOneWidget);
   });
 
   testWidgets('a toast shows above the "+" without moving it', (tester) async {
