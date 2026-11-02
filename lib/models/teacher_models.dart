@@ -1,6 +1,8 @@
 // Mirrors the `/api/v1/teacher/home` and `/schedule` payloads
 // (`HomeController`, `ScheduleController` in admin-siakad).
 
+import 'rpp_models.dart';
+
 class Lesson {
   const Lesson({
     required this.sessionNumber,
@@ -257,6 +259,7 @@ class HomeData {
     this.attendanceDuty,
     this.journalDuty,
     this.journalDutyReported = false,
+    this.rppDuty,
   });
 
   final int unreadNotifications;
@@ -267,6 +270,9 @@ class HomeData {
 
   /// Whether the server reports a journal duty at all (an older server does not).
   final bool journalDutyReported;
+
+  /// This week's RPP; null when the server does not report it (an older server).
+  final RppDuty? rppDuty;
   final String date;
   final String? dayName;
   final String? semesterName;
@@ -313,6 +319,10 @@ class HomeData {
       },
       journalDutyReported:
           (j['duties'] as Map<String, dynamic>?)?.containsKey('journal') ?? false,
+      rppDuty: switch ((j['duties'] as Map<String, dynamic>?)?['rpp']) {
+        final Map<String, dynamic> a => RppDuty.fromJson(a),
+        _ => null,
+      },
     );
   }
 }

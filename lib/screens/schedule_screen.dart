@@ -10,6 +10,7 @@ import 'lessons_screen.dart';
 import '../models/journal_models.dart';
 import '../widgets/one_line_label.dart';
 import 'journal_form_screen.dart';
+import 'rpp_screen.dart';
 import 'journal_lessons_screen.dart' show JournalChip;
 
 const _dayShort = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
@@ -364,6 +365,12 @@ class _SessionsState extends State<_Sessions> {
               ));
               if (mounted) _loadAttendance(); // refreshes the journal chip too
             },
+            onRpp: () => Navigator.of(context).push(MaterialPageRoute(
+              builder: (_) => RppScreen(
+                service: widget.service,
+                onUnauthorized: widget.onUnauthorized,
+              ),
+            )),
             onPresensi: () async {
               await Navigator.of(context).push(MaterialPageRoute(
                 builder: (_) => LessonsScreen(
@@ -388,6 +395,7 @@ class _SessionCard extends StatelessWidget {
     required this.recordable,
     required this.onPresensi,
     required this.onJurnal,
+    required this.onRpp,
   });
 
   final LessonGroup group;
@@ -398,6 +406,7 @@ class _SessionCard extends StatelessWidget {
   final bool recordable;
   final VoidCallback onPresensi;
   final void Function(JournalTarget target) onJurnal;
+  final VoidCallback onRpp;
 
   @override
   Widget build(BuildContext context) {
@@ -488,7 +497,13 @@ class _SessionCard extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 8),
-                const Expanded(child: _SoonButton('RPP')),
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: onRpp,
+                    style: _shortcutStyle,
+                    child: const OneLineLabel('RPP'),
+                  ),
+                ),
               ],
             ),
           ],
@@ -529,25 +544,3 @@ final _shortcutStyle = ButtonStyle(
   textStyle: WidgetStateProperty.all(const TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
 );
 
-/// Jurnal and RPP have no backend yet; they say so instead of doing nothing.
-class _SoonButton extends StatelessWidget {
-  const _SoonButton(this.label);
-
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return OutlinedButton(
-      onPressed: () {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(SnackBar(content: Text('$label akan segera hadir')));
-      },
-      style: OutlinedButton.styleFrom(
-        foregroundColor: const Color(0xFF64748B),
-        side: const BorderSide(color: Color(0xFFCBD5E1)),
-      ).merge(_shortcutStyle),
-      child: OneLineLabel(label),
-    );
-  }
-}

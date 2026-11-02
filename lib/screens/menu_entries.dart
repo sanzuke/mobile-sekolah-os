@@ -8,6 +8,7 @@ import 'facility_reports_screen.dart';
 import 'incidents_screen.dart';
 import 'journal_lessons_screen.dart';
 import 'meeting_minutes_screen.dart';
+import 'rpp_screen.dart';
 import 'vehicle_requests_screen.dart';
 import 'lessons_screen.dart';
 import 'shell_actions.dart';
@@ -80,11 +81,13 @@ final List<MenuEntry> menuEntries = [
           service: a.service,
           onUnauthorized: a.onUnauthorized,
           date: _todayIso())),
-  const MenuEntry(
+  MenuEntry(
       id: 'rpp',
       label: 'Kurikulum & RPP',
       icon: Icons.menu_book_outlined,
-      group: MenuGroup.mengajar),
+      group: MenuGroup.mengajar,
+      page: (context, a) =>
+          RppScreen(service: a.service, onUnauthorized: a.onUnauthorized)),
   MenuEntry(
       id: 'jurnal',
       label: 'Jurnal Mengajar',

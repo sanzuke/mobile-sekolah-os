@@ -244,9 +244,9 @@ void main() {
       (tester) async {
     await _pumpShell(tester, _home());
 
-    await tester.tap(find.text('RPP').first);
+    await tester.tap(find.text('Tahfidz').first);
     await tester.pump();
-    expect(find.text('Kurikulum & RPP akan segera hadir'), findsOneWidget);
+    expect(find.text('Tahfidz (IHQA) akan segera hadir'), findsOneWidget);
   });
 
   testWidgets('the bell opens Kotak masuk on Notifikasi and shows the unread dot',
