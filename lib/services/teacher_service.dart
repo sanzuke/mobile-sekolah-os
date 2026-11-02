@@ -5,6 +5,7 @@ import '../models/incident_models.dart';
 import '../models/journal_models.dart';
 import '../models/leave_models.dart';
 import '../models/meeting_models.dart';
+import '../models/rpp_models.dart';
 import '../models/teacher_models.dart';
 import '../models/vehicle_models.dart';
 import 'api_client.dart';
@@ -385,6 +386,40 @@ class TeacherService {
   Future<void> deleteLessonJournal(int scheduleId, String date) =>
       _client.delete('/v1/teacher/schedules/$scheduleId/journal',
           body: {'date': date});
+
+  /// Last / this / next week of RPP, then older ones.
+  Future<RppPage> rppWeeks() async {
+    final res = await _client.getEnvelope('/v1/teacher/rpp');
+    return RppPage(
+      weeks: [
+        for (final e in (res['data'] as List? ?? const []))
+          RppWeek.fromJson(e as Map<String, dynamic>)
+      ],
+      maxSizeMb: ((res['meta'] as Map?)?['max_size_mb'] as num?)?.toInt() ?? 10,
+    );
+  }
+
+  /// Uploads (or replaces) the RPP of the week containing [weekStart].
+  Future<RppWeek> submitRpp({
+    required String weekStart,
+    required String title,
+    String? description,
+    required String fileName,
+    required List<int> fileBytes,
+  }) async {
+    final data = await _client.postMultipart(
+      '/v1/teacher/rpp',
+      fields: {
+        'week_start': weekStart,
+        'title': title,
+        if (description != null && description.isNotEmpty) 'description': description,
+      },
+      files: [http.MultipartFile.fromBytes('file', fileBytes, filename: fileName)],
+    ) as Map<String, dynamic>;
+    return RppWeek.fromJson(data['rpp'] as Map<String, dynamic>);
+  }
+
+  Future<List<int>> rppFile(int id) => _client.getBytes('/v1/teacher/rpp/$id/file');
 
   /// Registers this phone for push (`token` is the FCM registration token).
   Future<void> registerDevice(String token) async {

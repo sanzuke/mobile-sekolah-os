@@ -9,6 +9,7 @@ import 'incident_detail_screen.dart';
 import 'incidents_screen.dart';
 import 'leave_requests_screen.dart';
 import 'meeting_minute_detail_screen.dart';
+import 'rpp_screen.dart';
 import 'vehicle_detail_screen.dart';
 import 'vehicle_requests_screen.dart';
 import 'meeting_minutes_screen.dart';
@@ -19,7 +20,8 @@ bool hasNotificationTarget(NotificationItem item) =>
     item.target?.type == 'meeting_minute' ||
     item.target?.type == 'student_incident' ||
     item.target?.type == 'facility_report' ||
-    item.target?.type == 'vehicle_request';
+    item.target?.type == 'vehicle_request' ||
+    item.target?.type == 'rpp';
 
 /// Opens what a notification is about. A leave decision opens that request; one
 /// stored before the id existed opens the list.
@@ -31,6 +33,13 @@ void openNotificationTarget(
 ) {
   final target = item.target;
   if (target == null || !hasNotificationTarget(item)) return;
+  if (target.type == 'rpp') {
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) =>
+          RppScreen(service: service, onUnauthorized: onUnauthorized),
+    ));
+    return;
+  }
   if (target.type == 'vehicle_request') {
     Navigator.of(context).push(MaterialPageRoute(
       builder: (_) => target.id == null

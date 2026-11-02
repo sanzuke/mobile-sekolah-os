@@ -34,3 +34,30 @@ class FileAttachmentPicker implements AttachmentPicker {
     return PickedAttachment(name: file.name, bytes: await file.readAsBytes());
   }
 }
+
+/// Picks an RPP document (PDF or Word). Same interface, other file types.
+class RppFilePicker implements AttachmentPicker {
+  const RppFilePicker();
+
+  static const _types = XTypeGroup(
+    label: 'PDF atau Word',
+    extensions: ['pdf', 'doc', 'docx'],
+    mimeTypes: [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ],
+    uniformTypeIdentifiers: [
+      'com.adobe.pdf',
+      'com.microsoft.word.doc',
+      'org.openxmlformats.wordprocessingml.document',
+    ],
+  );
+
+  @override
+  Future<PickedAttachment?> pick() async {
+    final file = await openFile(acceptedTypeGroups: const [_types]);
+    if (file == null) return null;
+    return PickedAttachment(name: file.name, bytes: await file.readAsBytes());
+  }
+}

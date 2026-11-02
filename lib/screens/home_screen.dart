@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../models/rpp_models.dart';
 import '../models/teacher_models.dart';
 import '../services/auth_service.dart';
 import '../widgets/async_view.dart';
@@ -503,8 +504,11 @@ class _DutiesCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 14),
-            // RPP has no backend yet: shown as "Segera", never as a made-up 0%.
-            const _DutyRow(label: 'RPP', value: 'Segera'),
+            // An older server does not report the RPP duty: "Segera" until it does, never a made-up value.
+            if (data.rppDuty == null)
+              const _DutyRow(label: 'RPP', value: 'Segera')
+            else
+              _rppRow(data.rppDuty!),
             const SizedBox(height: 12),
             // An older server does not report the journal duty at all: "Segera" until it does.
             if (!data.journalDutyReported)
@@ -545,6 +549,20 @@ class _DutiesCard extends StatelessWidget {
       ),
     );
   }
+}
+
+_DutyRow _rppRow(RppDuty d) {
+  final status = rppStatus(d.state, overdue: d.overdue);
+  return _DutyRow(
+    label: 'RPP pekan ini',
+    value: status.label,
+    progress: const {'approved', 'submitted'}.contains(d.state) ? 1 : 0,
+    emphasis: switch (status.tone) {
+      'ok' => _Tone.normal,
+      'bad' || 'warn' => _Tone.warning,
+      _ => _Tone.muted,
+    },
+  );
 }
 
 enum _Tone { normal, warning, muted }
